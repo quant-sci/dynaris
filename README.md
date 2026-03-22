@@ -8,8 +8,6 @@
 
 **dynaris** is a JAX-powered Python library for state-space models — from Dynamic Linear Models to non-linear filters, switching systems, and beyond.
 
-[ROADMAP](ROADMAP.md)
-
 ## Installation
 
 You can install the **dynaris** library using `uv`:
