@@ -6,7 +6,7 @@
 [![GitHub](https://img.shields.io/github/license/quant-sci/dynaris)](https://github.com/quant-sci/dynaris/blob/main/LICENSE)
 
 
-**dynaris** is a JAX-powered Python library for state-space models — from Dynamic Linear Models to non-linear filters, switching systems, and beyond.
+**dynaris** is a JAX-powered Python library for state-space models.
 
 ## Installation
 
