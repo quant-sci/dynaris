@@ -5,6 +5,8 @@ This section presents the mathematical foundations of Dynamic Linear Models
 following the notation and framework of West and Harrison (1997),
 *Bayesian Forecasting and Dynamic Models*.
 
+For a plain-language introduction, see :doc:`getting-started/concepts`.
+
 The DLM Quadruple
 -----------------
 

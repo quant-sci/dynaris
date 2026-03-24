@@ -22,6 +22,7 @@ extensions = [
     "sphinx.ext.mathjax",
     "sphinx.ext.viewcode",
     "sphinx.ext.intersphinx",
+    "sphinx_copybutton",
 ]
 
 templates_path = ["_templates"]
@@ -29,18 +30,16 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 # -- Options for HTML output -------------------------------------------------
 
-html_theme = "alabaster"
+html_theme = "furo"
+html_title = "dynaris"
+html_logo = "_static/logo.png"
 html_theme_options = {
-    "description": "JAX-powered Dynamic Linear Models",
-    "github_user": "quant-sci",
-    "github_repo": "dynaris",
-    "github_button": True,
-    "fixed_sidebar": True,
-    "sidebar_collapse": True,
-    "page_width": "940px",
-    "sidebar_width": "220px",
+    "source_repository": "https://github.com/quant-sci/dynaris",
+    "source_branch": "main",
+    "source_directory": "docs/",
 }
 html_static_path = ["_static"]
+html_css_files = ["custom.css"]
 
 # -- Extension configuration -------------------------------------------------
 

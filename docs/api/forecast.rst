@@ -1,8 +1,17 @@
 Forecasting
 ===========
 
-Multi-step-ahead predictions with uncertainty quantification and
-batch processing.
+Multi-step-ahead predictions with uncertainty quantification and batch
+processing. Forecasts can be initialized from either the filtered or
+smoothed terminal state:
+
+- **From filtered state** (``forecast_from_filter``): uses observations up to
+  time :math:`T` only
+- **From smoothed state** (``forecast_from_smoother``): uses the full dataset
+  for a more refined starting point
+
+The high-level ``forecast`` function is called internally by
+:meth:`DLM.forecast() <dynaris.dlm.api.DLM.forecast>`.
 
 .. autofunction:: dynaris.forecast.forecast.forecast
 
@@ -18,3 +27,4 @@ batch processing.
 
 .. autoclass:: dynaris.forecast.forecast.ForecastResult
    :members:
+   :no-index:
