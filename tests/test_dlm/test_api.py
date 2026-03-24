@@ -10,16 +10,11 @@ import pandas as pd
 import pytest
 
 from dynaris import DLM, LocalLevel, LocalLinearTrend, Seasonal
+from dynaris.datasets import load_nile_jax
 
 matplotlib.use("Agg")
 
-NILE = jnp.array([
-    1120, 1160, 963, 1210, 1160, 1160, 813, 1230, 1370, 1140,
-    995, 935, 1110, 994, 1020, 960, 1180, 799, 958, 1140,
-    1100, 1210, 1150, 1250, 1260, 1220, 1030, 1100, 774, 840,
-    874, 694, 940, 833, 701, 916, 692, 1020, 1050, 969,
-    831, 726, 456, 824, 702, 1120, 1100, 832, 764, 821,
-], dtype=jnp.float32)
+NILE = load_nile_jax()
 
 
 # ===================================================================
