@@ -40,7 +40,8 @@ dev = [
     "mypy>=1.14",
     "pandas-stubs>=3.0.0.260204",
     "sphinx>=9.1.0",
-    "alabaster>=1.0.0",
+    "furo>=2024.8.6",
+    "sphinx-copybutton>=0.5",
 ]
 
 [build-system]

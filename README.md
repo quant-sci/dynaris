@@ -11,30 +11,31 @@
 ## Installation
 
 ```bash
+pip install dynaris
+# or
 uv add dynaris
 ```
+
+## Documentation
+
+Full documentation is available at [dynaris.readthedocs.io](https://dynaris.readthedocs.io).
 
 ## Quickstart
 
 ```python
-from dynaris import LocalLevel, Seasonal, DLM
+from dynaris import LocalLevel, DLM
 from dynaris.datasets import load_nile
 
 # Load data
 y = load_nile()
 
-# Build a model by composing components
-model = LocalLevel(sigma_level=38.0, sigma_obs=123.0) + Seasonal(period=12)
-
-# Fit, smooth, forecast
-dlm = DLM(model)
+# Build a local-level model and fit
+dlm = DLM(LocalLevel(sigma_level=38.0, sigma_obs=123.0))
 dlm.fit(y).smooth()
-fc = dlm.forecast(steps=12)
 
-# Print summary
+# Forecast and plot
+fc = dlm.forecast(steps=10)
 print(dlm.summary())
-
-# Single-figure overview
 dlm.plot(kind="panel")
 ```
 
@@ -43,7 +44,7 @@ dlm.plot(kind="panel")
 Build models by combining components with `+`:
 
 ```python
-from dynaris import LocalLinearTrend, Seasonal, Cycle, Autoregressive, Regression
+from dynaris import LocalLinearTrend, Seasonal, Cycle
 
 model = (
     LocalLinearTrend(sigma_level=1.0, sigma_slope=0.1)
@@ -80,26 +81,14 @@ print(f"Log-likelihood: {result.log_likelihood:.2f}")
 
 ## Datasets
 
-```python
-from dynaris.datasets import load_nile, load_airline, load_lynx, load_sunspots, load_temperature, load_gdp
-
-y = load_airline()     # 144 monthly obs, 1949-1960
-y = load_lynx()        # 114 annual obs, 1821-1934 (~10-year cycle)
-y = load_sunspots()    # 288 annual obs, 1700-1987 (~11-year cycle)
-y = load_temperature() # 144 annual obs, 1880-2023 (warming trend)
-y = load_gdp()         # 319 quarterly obs, 1947-2026 (business cycle)
-```
-
-## Notation
-
-Dynaris follows the West & Harrison (1997) notation:
-
-| Symbol | Code | Meaning |
-|--------|------|---------|
-| **G** | `model.G` / `system_matrix` | System (evolution) matrix |
-| **F** | `model.F` / `observation_matrix` | Observation (regression) matrix |
-| **W** | `model.W` / `evolution_cov` | Evolution covariance |
-| **V** | `model.V` / `obs_cov` | Observational variance |
+| Dataset | Loader | N | Frequency | Domain |
+|---------|--------|---|-----------|--------|
+| Nile river flow | `load_nile()` | 100 | Annual | Hydrology |
+| Airline passengers | `load_airline()` | 144 | Monthly | Transportation |
+| Lynx population | `load_lynx()` | 114 | Annual | Ecology |
+| Sunspot numbers | `load_sunspots()` | 288 | Annual | Astronomy |
+| Global temperature | `load_temperature()` | 144 | Annual | Climate |
+| US GDP growth | `load_gdp()` | 319 | Quarterly | Economics |
 
 ## License
 
