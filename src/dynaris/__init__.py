@@ -20,7 +20,7 @@ from dynaris.dlm import (
 from dynaris.filters import KalmanFilter, kalman_filter
 from dynaris.smoothers import RTSSmoother, rts_smooth
 
-__version__ = "0.1.01"
+__version__ = "0.1.0"
 
 __all__ = [
     "DLM",
