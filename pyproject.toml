@@ -1,6 +1,6 @@
 [project]
 name = "dynaris"
-version = "0.1.0"
+version = "0.1.01"
 description = "A JAX-powered Python library for Dynamic Linear Models (DLMs)"
 readme = "README.md"
 license = { text = "MIT" }

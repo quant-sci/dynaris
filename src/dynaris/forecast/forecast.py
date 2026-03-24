@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import functools
 from typing import NamedTuple
 
 import jax
@@ -41,7 +42,7 @@ class ForecastResult(NamedTuple):
 # ---------------------------------------------------------------------------
 
 
-@jax.jit(static_argnums=(2,))
+@functools.partial(jax.jit, static_argnums=(2,))
 def forecast(
     model: StateSpaceModel,
     last_state: GaussianState,
