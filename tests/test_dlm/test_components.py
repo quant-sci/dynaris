@@ -7,7 +7,6 @@ import jax.numpy as jnp
 import numpy as np
 from jax import Array
 
-from dynaris.core.state_space import StateSpaceModel
 from dynaris.dlm.components import (
     Autoregressive,
     Cycle,
@@ -18,7 +17,6 @@ from dynaris.dlm.components import (
 )
 from dynaris.filters.kalman import kalman_filter
 from dynaris.smoothers.rts import rts_smooth
-
 
 # ===================================================================
 # LocalLevel

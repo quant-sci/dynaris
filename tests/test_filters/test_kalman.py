@@ -11,9 +11,8 @@ from dynaris.core.protocols import FilterProtocol
 from dynaris.core.results import FilterResult
 from dynaris.core.state_space import StateSpaceModel
 from dynaris.core.types import GaussianState
-from dynaris.filters.kalman import KalmanFilter, kalman_filter, predict, update
 from dynaris.datasets import load_nile_jax
-
+from dynaris.filters.kalman import KalmanFilter, kalman_filter, predict, update
 
 # ---------------------------------------------------------------------------
 # Fixtures

@@ -6,6 +6,7 @@ to model and forecast monthly data with an upward trend and yearly cycle.
 
 import jax
 import jax.numpy as jnp
+import matplotlib.pyplot as plt
 import pandas as pd
 
 from dynaris import DLM, LocalLinearTrend, Seasonal
@@ -47,8 +48,6 @@ print(fc)
 print()
 
 # --- Plots ---
-import matplotlib.pyplot as plt
-
 dlm.plot(kind="filtered", title="Sales — Filtered")
 dlm.plot(kind="smoothed", title="Sales — Smoothed")
 dlm.plot(kind="forecast", title="Sales — 24-month Forecast", n_history=36)

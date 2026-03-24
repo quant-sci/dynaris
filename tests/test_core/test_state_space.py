@@ -8,7 +8,7 @@ from dynaris.core.state_space import StateSpaceModel
 
 
 def _make_ssm(
-    state_dim: int = 2, obs_dim: int = 1, with_B: bool = False
+    state_dim: int = 2, obs_dim: int = 1, with_input: bool = False
 ) -> StateSpaceModel:
     kwargs: dict = dict(
         system_matrix=jnp.eye(state_dim),
@@ -16,7 +16,7 @@ def _make_ssm(
         evolution_cov=jnp.eye(state_dim) * 0.1,
         obs_cov=jnp.eye(obs_dim),
     )
-    if with_B:
+    if with_input:
         kwargs["input_matrix"] = jnp.ones((state_dim, 1))
     return StateSpaceModel(**kwargs)
 
@@ -36,7 +36,7 @@ def test_aliases() -> None:
     assert ssm.B is ssm.input_matrix
 
 
-def test_pytree_roundtrip_no_B() -> None:
+def test_pytree_roundtrip_no_input() -> None:
     ssm = _make_ssm()
     leaves, treedef = tree_util.tree_flatten(ssm)
     assert len(leaves) == 4
@@ -45,8 +45,8 @@ def test_pytree_roundtrip_no_B() -> None:
     assert ssm2.B is None
 
 
-def test_pytree_roundtrip_with_B() -> None:
-    ssm = _make_ssm(with_B=True)
+def test_pytree_roundtrip_with_input() -> None:
+    ssm = _make_ssm(with_input=True)
     leaves, treedef = tree_util.tree_flatten(ssm)
     assert len(leaves) == 5
     ssm2 = tree_util.tree_unflatten(treedef, leaves)
@@ -58,10 +58,10 @@ def test_jit_compatibility() -> None:
     ssm = _make_ssm(3, 1)
 
     @jax.jit
-    def trace_G(m: StateSpaceModel) -> jax.Array:
+    def trace_g(m: StateSpaceModel) -> jax.Array:
         return jnp.trace(m.G)
 
-    assert float(trace_G(ssm)) == 3.0
+    assert float(trace_g(ssm)) == 3.0
 
 
 def test_add_block_diagonal() -> None:
@@ -91,16 +91,16 @@ def test_add_block_diagonal() -> None:
     assert s3.B is None
 
 
-def test_add_both_have_B() -> None:
-    s1 = _make_ssm(2, 1, with_B=True)
-    s2 = _make_ssm(3, 1, with_B=True)
+def test_add_both_have_input() -> None:
+    s1 = _make_ssm(2, 1, with_input=True)
+    s2 = _make_ssm(3, 1, with_input=True)
     s3 = s1 + s2
     assert s3.B is not None
     assert s3.B.shape == (5, 2)  # block-diagonal: (2,1) and (3,1) -> (5,2)
 
 
-def test_add_one_has_B() -> None:
-    s1 = _make_ssm(2, 1, with_B=True)
+def test_add_one_has_input() -> None:
+    s1 = _make_ssm(2, 1, with_input=True)
     s2 = _make_ssm(3, 1)
     s3 = s1 + s2
     assert s3.B is not None
@@ -150,6 +150,6 @@ def test_repr() -> None:
     assert "obs_dim=2" in r
     assert "input_dim" not in r
 
-    ssm_b = _make_ssm(3, 2, with_B=True)
+    ssm_b = _make_ssm(3, 2, with_input=True)
     r_b = repr(ssm_b)
     assert "input_dim=1" in r_b

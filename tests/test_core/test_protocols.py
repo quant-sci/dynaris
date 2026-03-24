@@ -37,14 +37,13 @@ class DummyFilter:
         initial_state: GaussianState | None = None,
         inputs: Array | None = None,
     ) -> FilterResult:
-        T = observations.shape[0]
+        t_len = observations.shape[0]
         n = model.state_dim
-        m = model.obs_dim
         return FilterResult(
-            filtered_states=jnp.zeros((T, n)),
-            filtered_covariances=jnp.zeros((T, n, n)),
-            predicted_states=jnp.zeros((T, n)),
-            predicted_covariances=jnp.zeros((T, n, n)),
+            filtered_states=jnp.zeros((t_len, n)),
+            filtered_covariances=jnp.zeros((t_len, n, n)),
+            predicted_states=jnp.zeros((t_len, n)),
+            predicted_covariances=jnp.zeros((t_len, n, n)),
             log_likelihood=jnp.array(0.0),
             observations=observations,
         )

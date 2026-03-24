@@ -6,8 +6,8 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
-from dynaris.core.state_space import StateSpaceModel
 from dynaris.core.types import GaussianState
+from dynaris.datasets import load_nile_jax
 from dynaris.dlm.components import LocalLevel, LocalLinearTrend, Seasonal
 from dynaris.filters.kalman import kalman_filter
 from dynaris.forecast.forecast import (
@@ -20,7 +20,6 @@ from dynaris.forecast.forecast import (
     forecast_from_smoother,
 )
 from dynaris.smoothers.rts import rts_smooth
-from dynaris.datasets import load_nile_jax
 
 NILE = load_nile_jax()
 

@@ -25,7 +25,6 @@ print(dlm.summary())
 print()
 
 # --- Current warming rate ---
-import numpy as np
 
 smoothed = dlm.smoothed_states_df()
 current_slope = float(smoothed.iloc[-1]["state_1"])

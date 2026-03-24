@@ -8,7 +8,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import pytest
 
-from dynaris.core.state_space import StateSpaceModel
+from dynaris.datasets import load_nile_jax
 from dynaris.dlm.components import LocalLevel, LocalLinearTrend, Seasonal
 from dynaris.filters.kalman import kalman_filter
 from dynaris.forecast.forecast import forecast_from_filter
@@ -21,7 +21,6 @@ from dynaris.plotting.plots import (
     plot_smoothed,
 )
 from dynaris.smoothers.rts import rts_smooth
-from dynaris.datasets import load_nile_jax
 
 # Use non-interactive backend for tests
 matplotlib.use("Agg")

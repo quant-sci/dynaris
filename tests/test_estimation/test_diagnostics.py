@@ -7,9 +7,9 @@ import jax.numpy as jnp
 import numpy as np
 
 from dynaris.core.state_space import StateSpaceModel
+from dynaris.datasets import load_nile_jax
 from dynaris.estimation.diagnostics import acf, ljung_box, pacf, standardized_residuals
 from dynaris.filters.kalman import kalman_filter
-from dynaris.datasets import load_nile_jax
 
 NILE = load_nile_jax()
 
@@ -138,7 +138,7 @@ def test_pacf_ar1_cuts_off() -> None:
 def test_ljung_box_white_noise() -> None:
     """White noise should NOT be rejected (high p-value)."""
     x = jax.random.normal(jax.random.PRNGKey(4), (500,))
-    q_stat, p_val = ljung_box(x, n_lags=10)
+    _q_stat, p_val = ljung_box(x, n_lags=10)
     assert p_val > 0.01  # should not reject at 1% level
 
 
@@ -153,7 +153,7 @@ def test_ljung_box_correlated() -> None:
         return x_new, x_new
 
     _, x = jax.lax.scan(_step, jnp.array(0.0), noise)
-    q_stat, p_val = ljung_box(x, n_lags=10)
+    _q_stat, p_val = ljung_box(x, n_lags=10)
     assert p_val < 0.05
 
 

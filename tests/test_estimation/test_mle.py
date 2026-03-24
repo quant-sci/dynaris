@@ -3,11 +3,10 @@
 from __future__ import annotations
 
 import jax.numpy as jnp
-import numpy as np
 
 from dynaris.core.state_space import StateSpaceModel
-from dynaris.estimation.mle import MLEResult, fit_mle
 from dynaris.datasets import load_nile_jax
+from dynaris.estimation.mle import MLEResult, fit_mle
 
 # Nile river data (truncated for speed)
 NILE = load_nile_jax()

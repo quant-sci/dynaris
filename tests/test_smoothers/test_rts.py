@@ -9,11 +9,9 @@ import numpy as np
 from dynaris.core.protocols import SmootherProtocol
 from dynaris.core.results import SmootherResult
 from dynaris.core.state_space import StateSpaceModel
-from dynaris.core.types import GaussianState
+from dynaris.datasets import load_nile_jax
 from dynaris.filters.kalman import kalman_filter
 from dynaris.smoothers.rts import RTSSmoother, rts_smooth
-from dynaris.datasets import load_nile_jax
-
 
 # Nile data (same as filter tests)
 NILE = load_nile_jax()

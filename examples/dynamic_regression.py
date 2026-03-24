@@ -7,8 +7,10 @@ when the relationship between predictors and the response changes.
 
 import jax
 import jax.numpy as jnp
+import matplotlib.pyplot as plt
+import numpy as np
 
-from dynaris import DLM, Regression
+from dynaris import DLM
 from dynaris.core.state_space import StateSpaceModel
 
 # --- Simulate data with a time-varying coefficient ---
@@ -54,8 +56,6 @@ print(dlm.summary())
 print()
 
 # The filtered state tracks the time-varying coefficient
-import numpy as np
-
 filtered_beta = np.asarray(dlm.filter_result.filtered_states[:, 0])
 smoothed_beta = np.asarray(dlm.smoother_result.smoothed_states[:, 0])
 
@@ -64,8 +64,6 @@ print(f"Filtered beta range: [{filtered_beta.min():.2f}, {filtered_beta.max():.2
 print(f"Smoothed beta range: [{smoothed_beta.min():.2f}, {smoothed_beta.max():.2f}]")
 
 # --- Plot ---
-import matplotlib.pyplot as plt
-
 dlm.plot(kind="filtered", title="Dynamic Regression — Filtered Coefficient")
 dlm.plot(kind="smoothed", title="Dynamic Regression — Smoothed Coefficient")
 dlm.plot(kind="diagnostics", title="Dynamic Regression — Diagnostics")

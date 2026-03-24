@@ -7,32 +7,32 @@ from jax import tree_util
 from dynaris.core.results import FilterResult, SmootherResult
 
 
-def _make_filter_result(T: int = 10, n: int = 2, m: int = 1) -> FilterResult:
+def _make_filter_result(t_len: int = 10, n: int = 2, m: int = 1) -> FilterResult:
     return FilterResult(
-        filtered_states=jnp.zeros((T, n)),
-        filtered_covariances=jnp.zeros((T, n, n)),
-        predicted_states=jnp.zeros((T, n)),
-        predicted_covariances=jnp.zeros((T, n, n)),
+        filtered_states=jnp.zeros((t_len, n)),
+        filtered_covariances=jnp.zeros((t_len, n, n)),
+        predicted_states=jnp.zeros((t_len, n)),
+        predicted_covariances=jnp.zeros((t_len, n, n)),
         log_likelihood=jnp.array(0.0),
-        observations=jnp.zeros((T, m)),
+        observations=jnp.zeros((t_len, m)),
     )
 
 
-def _make_smoother_result(T: int = 10, n: int = 2, m: int = 1) -> SmootherResult:
+def _make_smoother_result(t_len: int = 10, n: int = 2, m: int = 1) -> SmootherResult:
     return SmootherResult(
-        smoothed_states=jnp.ones((T, n)),
-        smoothed_covariances=jnp.ones((T, n, n)),
-        filtered_states=jnp.zeros((T, n)),
-        filtered_covariances=jnp.zeros((T, n, n)),
-        predicted_states=jnp.zeros((T, n)),
-        predicted_covariances=jnp.zeros((T, n, n)),
+        smoothed_states=jnp.ones((t_len, n)),
+        smoothed_covariances=jnp.ones((t_len, n, n)),
+        filtered_states=jnp.zeros((t_len, n)),
+        filtered_covariances=jnp.zeros((t_len, n, n)),
+        predicted_states=jnp.zeros((t_len, n)),
+        predicted_covariances=jnp.zeros((t_len, n, n)),
         log_likelihood=jnp.array(-5.0),
-        observations=jnp.zeros((T, m)),
+        observations=jnp.zeros((t_len, m)),
     )
 
 
 def test_filter_result_fields() -> None:
-    fr = _make_filter_result(T=10, n=3, m=2)
+    fr = _make_filter_result(t_len=10, n=3, m=2)
     assert fr.filtered_states.shape == (10, 3)
     assert fr.predicted_covariances.shape == (10, 3, 3)
     assert fr.observations.shape == (10, 2)
@@ -58,7 +58,7 @@ def test_filter_result_jit() -> None:
 
 
 def test_smoother_result_fields() -> None:
-    sr = _make_smoother_result(T=8, n=4, m=2)
+    sr = _make_smoother_result(t_len=8, n=4, m=2)
     assert sr.smoothed_states.shape == (8, 4)
     assert sr.smoothed_covariances.shape == (8, 4, 4)
     assert sr.filtered_states.shape == (8, 4)

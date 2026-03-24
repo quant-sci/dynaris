@@ -6,8 +6,8 @@ import jax
 import jax.numpy as jnp
 
 from dynaris.core.state_space import StateSpaceModel
-from dynaris.estimation.em import EMResult, fit_em
 from dynaris.datasets import load_nile_jax
+from dynaris.estimation.em import EMResult, fit_em
 
 NILE = load_nile_jax()
 

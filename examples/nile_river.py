@@ -5,6 +5,8 @@ Demonstrates the local-level model on the Nile river annual flow dataset
 Durbin & Koopman (2012), "Time Series Analysis by State Space Methods".
 """
 
+import matplotlib.pyplot as plt
+
 from dynaris import DLM, LocalLevel
 from dynaris.datasets import load_nile
 
@@ -28,8 +30,6 @@ print(fc)
 print()
 
 # --- Plots ---
-import matplotlib.pyplot as plt
-
 dlm.plot(kind="filtered", title="Nile — Filtered")
 dlm.plot(kind="smoothed", title="Nile — Smoothed")
 dlm.forecast(steps=10)

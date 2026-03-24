@@ -8,6 +8,7 @@ Domain: economics / macrofinance.
 """
 
 import matplotlib.pyplot as plt
+import numpy as np
 
 from dynaris import DLM, Autoregressive, LocalLevel
 from dynaris.datasets import load_gdp
@@ -27,8 +28,6 @@ print(dlm.summary())
 print()
 
 # --- Recession detection: negative filtered level ---
-import numpy as np
-
 filtered = dlm.filtered_states_df()
 level = np.asarray(filtered["state_0"])
 n_negative = np.sum(level < 0)
