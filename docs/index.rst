@@ -1,4 +1,7 @@
-Dynaris provides a fast, composable, JAX-native DLM library with autodiff
+dynaris
+=======
+
+A fast, composable, JAX-native DLM library with autodiff
 parameter estimation, multi-step forecasting, and clean visualization.
 
 .. code-block:: python
