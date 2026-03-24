@@ -64,13 +64,13 @@ def forecast(
     def _forecast_step(
         state: GaussianState, _: None
     ) -> tuple[GaussianState, tuple[Array, Array, Array, Array]]:
-        # Predict next state
-        pred_mean = model.F @ state.mean
-        pred_cov = model.F @ state.cov @ model.F.T + model.Q
+        # Predict next state: a = G @ m, R = G @ C @ G' + W
+        pred_mean = model.G @ state.mean
+        pred_cov = model.G @ state.cov @ model.G.T + model.W
 
-        # Observation-space forecast
-        obs_mean = model.H @ pred_mean
-        obs_cov = model.H @ pred_cov @ model.H.T + model.R
+        # Observation-space forecast: f = F' @ a, Q = F' @ R @ F + V
+        obs_mean = model.F @ pred_mean
+        obs_cov = model.F @ pred_cov @ model.F.T + model.V
 
         new_state = GaussianState(mean=pred_mean, cov=pred_cov)
         return new_state, (obs_mean, obs_cov, pred_mean, pred_cov)

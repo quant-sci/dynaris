@@ -32,10 +32,10 @@ def LocalLevel(  # noqa: N802
     State dimension: 1.
     """
     return StateSpaceModel(
-        transition_matrix=jnp.array([[1.0]]),
+        system_matrix=jnp.array([[1.0]]),
         observation_matrix=jnp.array([[1.0]]),
-        state_noise_cov=jnp.array([[sigma_level**2]]),
-        obs_noise_cov=jnp.array([[sigma_obs**2]]),
+        evolution_cov=jnp.array([[sigma_level**2]]),
+        obs_cov=jnp.array([[sigma_obs**2]]),
     )
 
 
@@ -60,12 +60,12 @@ def LocalLinearTrend(  # noqa: N802
     State dimension: 2.
     """
     return StateSpaceModel(
-        transition_matrix=jnp.array([[1.0, 1.0], [0.0, 1.0]]),
+        system_matrix=jnp.array([[1.0, 1.0], [0.0, 1.0]]),
         observation_matrix=jnp.array([[1.0, 0.0]]),
-        state_noise_cov=jnp.diag(
+        evolution_cov=jnp.diag(
             jnp.array([sigma_level**2, sigma_slope**2])
         ),
-        obs_noise_cov=jnp.array([[sigma_obs**2]]),
+        obs_cov=jnp.array([[sigma_obs**2]]),
     )
 
 
@@ -121,10 +121,10 @@ def _seasonal_dummy(
     state_noise = state_noise.at[0, 0].set(sigma_seasonal**2)
 
     return StateSpaceModel(
-        transition_matrix=transition,
+        system_matrix=transition,
         observation_matrix=observation,
-        state_noise_cov=state_noise,
-        obs_noise_cov=jnp.array([[sigma_obs**2]]),
+        evolution_cov=state_noise,
+        obs_cov=jnp.array([[sigma_obs**2]]),
     )
 
 
@@ -180,10 +180,10 @@ def _seasonal_fourier(
     obs_noise = jnp.array([[sigma_obs**2]])
 
     return StateSpaceModel(
-        transition_matrix=transition,
+        system_matrix=transition,
         observation_matrix=observation,
-        state_noise_cov=state_noise,
-        obs_noise_cov=obs_noise,
+        evolution_cov=state_noise,
+        obs_cov=obs_noise,
     )
 
 
@@ -200,8 +200,8 @@ def Regression(  # noqa: N802
     """Dynamic regression component.
 
     State: coefficient vector beta_t of length ``n_regressors``.
-      beta_t = beta_{t-1} + w_t  (random walk coefficients if sigma_coeff > 0)
-    Obs: y_t = X_t @ beta_t + v_t
+    Transition: beta_t = beta_{t-1} + w_t (random walk if sigma_coeff > 0).
+    Observation: y_t = X_t @ beta_t + v_t.
 
     The observation matrix H should be updated at each time step with the
     regressor values. This factory sets H = I as a placeholder; the user
@@ -213,10 +213,10 @@ def Regression(  # noqa: N802
     """
     n = n_regressors
     return StateSpaceModel(
-        transition_matrix=jnp.eye(n),
+        system_matrix=jnp.eye(n),
         observation_matrix=jnp.ones((1, n)),
-        state_noise_cov=jnp.eye(n) * sigma_coeff**2,
-        obs_noise_cov=jnp.array([[sigma_obs**2]]),
+        evolution_cov=jnp.eye(n) * sigma_coeff**2,
+        obs_cov=jnp.array([[sigma_obs**2]]),
     )
 
 
@@ -233,13 +233,8 @@ def Autoregressive(  # noqa: N802
 ) -> StateSpaceModel:
     """Autoregressive (AR) component of given order.
 
-    State: [x_t, x_{t-1}, ..., x_{t-p+1}]
-    Transition in companion form:
-      [[phi_1, phi_2, ..., phi_p],
-       [1,     0,     ..., 0    ],
-       [0,     1,     ..., 0    ],
-       ...
-       [0,     0,     ..., 0    ]]
+    State: ``[x_t, x_{t-1}, ..., x_{t-p+1}]``.
+    Transition uses the companion form with coefficients in the first row.
 
     Args:
         order: AR order p.
@@ -266,10 +261,10 @@ def Autoregressive(  # noqa: N802
     state_noise = state_noise.at[0, 0].set(sigma_ar**2)
 
     return StateSpaceModel(
-        transition_matrix=transition,
+        system_matrix=transition,
         observation_matrix=observation,
-        state_noise_cov=state_noise,
-        obs_noise_cov=jnp.array([[sigma_obs**2]]),
+        evolution_cov=state_noise,
+        obs_cov=jnp.array([[sigma_obs**2]]),
     )
 
 
@@ -314,8 +309,8 @@ def Cycle(  # noqa: N802
     obs_noise = jnp.array([[sigma_obs**2]])
 
     return StateSpaceModel(
-        transition_matrix=transition,
+        system_matrix=transition,
         observation_matrix=observation,
-        state_noise_cov=state_noise,
-        obs_noise_cov=obs_noise,
+        evolution_cov=state_noise,
+        obs_cov=obs_noise,
     )

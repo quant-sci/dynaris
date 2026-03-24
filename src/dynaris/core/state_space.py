@@ -1,4 +1,4 @@
-"""State-space model representation."""
+"""State-space model representation (West & Harrison notation)."""
 
 from __future__ import annotations
 
@@ -13,58 +13,60 @@ from dynaris.core.types import GaussianState
 
 @dataclass(frozen=True)
 class StateSpaceModel:
-    """Linear-Gaussian state-space model.
+    """Linear-Gaussian Dynamic Linear Model.
 
-    State equation:   x_t = F @ x_{t-1} + B @ u_t + w_t,  w_t ~ N(0, Q)
-    Observation eq:   y_t = H @ x_t + v_t,                 v_t ~ N(0, R)
+    Following West & Harrison (1997) notation:
+
+    System equation:    theta_t = G @ theta_{t-1} + omega_t,  omega_t ~ N(0, W)
+    Observation eq:     Y_t = F' @ theta_t + nu_t,            nu_t ~ N(0, V)
 
     Attributes:
-        transition_matrix: F, shape (state_dim, state_dim).
-        observation_matrix: H, shape (obs_dim, state_dim).
-        state_noise_cov: Q, shape (state_dim, state_dim).
-        obs_noise_cov: R, shape (obs_dim, obs_dim).
+        observation_matrix: F, shape (obs_dim, state_dim).
+        system_matrix: G, shape (state_dim, state_dim).
+        obs_cov: V, shape (obs_dim, obs_dim).
+        evolution_cov: W, shape (state_dim, state_dim).
         input_matrix: B, shape (state_dim, input_dim) or None.
     """
 
-    transition_matrix: Array  # F: (n, n)
-    observation_matrix: Array  # H: (m, n)
-    state_noise_cov: Array  # Q: (n, n)
-    obs_noise_cov: Array  # R: (m, m)
+    observation_matrix: Array  # F: (m, n)
+    system_matrix: Array  # G: (n, n)
+    obs_cov: Array  # V: (m, m)
+    evolution_cov: Array  # W: (n, n)
     input_matrix: Array | None = None  # B: (n, p) or None
 
     # --- Dimension properties ---
 
     @property
     def state_dim(self) -> int:
-        """Dimension of the latent state vector."""
-        return int(self.transition_matrix.shape[-1])
+        """Dimension of the state (parameter) vector."""
+        return int(self.system_matrix.shape[-1])
 
     @property
     def obs_dim(self) -> int:
         """Dimension of the observation vector."""
         return int(self.observation_matrix.shape[-2])
 
-    # --- Short aliases for math-style access ---
+    # --- Short aliases (West & Harrison notation) ---
 
     @property
     def F(self) -> Array:  # noqa: N802
-        """Alias for transition_matrix."""
-        return self.transition_matrix
-
-    @property
-    def H(self) -> Array:  # noqa: N802
-        """Alias for observation_matrix."""
+        """Observation/regression matrix (F in W&H)."""
         return self.observation_matrix
 
     @property
-    def Q(self) -> Array:  # noqa: N802
-        """Alias for state_noise_cov."""
-        return self.state_noise_cov
+    def G(self) -> Array:  # noqa: N802
+        """System/evolution matrix (G in W&H)."""
+        return self.system_matrix
 
     @property
-    def R(self) -> Array:  # noqa: N802
-        """Alias for obs_noise_cov."""
-        return self.obs_noise_cov
+    def V(self) -> Array:  # noqa: N802
+        """Observational variance/covariance (V in W&H)."""
+        return self.obs_cov
+
+    @property
+    def W(self) -> Array:  # noqa: N802
+        """Evolution covariance (W in W&H)."""
+        return self.evolution_cov
 
     @property
     def B(self) -> Array | None:  # noqa: N802
@@ -81,8 +83,8 @@ class StateSpaceModel:
         """Create a default initial GaussianState for this model.
 
         Args:
-            mean: Initial state mean. Defaults to zeros.
-            cov: Initial state covariance. Defaults to 1e6 * I (diffuse prior).
+            mean: Initial state mean (m_0). Defaults to zeros.
+            cov: Initial state covariance (C_0). Defaults to 1e6 * I (diffuse prior).
 
         Returns:
             GaussianState with the specified or default initial conditions.
@@ -94,29 +96,29 @@ class StateSpaceModel:
             cov = jnp.eye(n) * 1e6
         return GaussianState(mean=mean, cov=cov)
 
-    # --- Composition ---
+    # --- Composition (superposition principle) ---
 
     def __add__(self, other: StateSpaceModel) -> StateSpaceModel:
-        """Compose two models via block-diagonal concatenation.
+        """Compose two models via superposition (West & Harrison).
 
         The resulting model has:
-        - F_new = block_diag(self.F, other.F)
-        - H_new = [self.H, other.H]  (horizontal concatenation)
-        - Q_new = block_diag(self.Q, other.Q)
-        - R_new = self.R + other.R  (shared observation noise adds)
+        - G_new = block_diag(G1, G2)
+        - F_new = [F1, F2]  (horizontal concatenation)
+        - W_new = block_diag(W1, W2)
+        - V_new = V1 + V2  (shared observation noise adds)
         """
         n1, n2 = self.state_dim, other.state_dim
 
-        transition = jnp.block([
-            [self.F, jnp.zeros((n1, n2))],
-            [jnp.zeros((n2, n1)), other.F],
+        system = jnp.block([
+            [self.G, jnp.zeros((n1, n2))],
+            [jnp.zeros((n2, n1)), other.G],
         ])
-        observation = jnp.concatenate([self.H, other.H], axis=-1)
-        state_noise = jnp.block([
-            [self.Q, jnp.zeros((n1, n2))],
-            [jnp.zeros((n2, n1)), other.Q],
+        observation = jnp.concatenate([self.F, other.F], axis=-1)
+        evolution = jnp.block([
+            [self.W, jnp.zeros((n1, n2))],
+            [jnp.zeros((n2, n1)), other.W],
         ])
-        obs_noise = self.R + other.R
+        obs = self.V + other.V
 
         input_mat: Array | None = None
         if self.input_matrix is not None and other.input_matrix is not None:
@@ -144,10 +146,10 @@ class StateSpaceModel:
             )
 
         return StateSpaceModel(
-            transition_matrix=transition,
             observation_matrix=observation,
-            state_noise_cov=state_noise,
-            obs_noise_cov=obs_noise,
+            system_matrix=system,
+            obs_cov=obs,
+            evolution_cov=evolution,
             input_matrix=input_mat,
         )
 
@@ -168,10 +170,10 @@ class StateSpaceModel:
         """Flatten into JAX pytree leaves and auxiliary data."""
         has_input = self.input_matrix is not None
         leaves: list[Array] = [
-            self.transition_matrix,
             self.observation_matrix,
-            self.state_noise_cov,
-            self.obs_noise_cov,
+            self.system_matrix,
+            self.obs_cov,
+            self.evolution_cov,
         ]
         if has_input:
             leaves.append(self.input_matrix)  # type: ignore[arg-type]
@@ -184,17 +186,17 @@ class StateSpaceModel:
         """Reconstruct from JAX pytree leaves."""
         if aux_data["has_input"]:
             return cls(
-                transition_matrix=children[0],
-                observation_matrix=children[1],
-                state_noise_cov=children[2],
-                obs_noise_cov=children[3],
+                observation_matrix=children[0],
+                system_matrix=children[1],
+                obs_cov=children[2],
+                evolution_cov=children[3],
                 input_matrix=children[4],
             )
         return cls(
-            transition_matrix=children[0],
-            observation_matrix=children[1],
-            state_noise_cov=children[2],
-            obs_noise_cov=children[3],
+            observation_matrix=children[0],
+            system_matrix=children[1],
+            obs_cov=children[2],
+            evolution_cov=children[3],
         )
 
 

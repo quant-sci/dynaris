@@ -26,10 +26,10 @@ NILE = jnp.array([
 
 def _fit_nile() -> tuple[StateSpaceModel, object]:
     model = StateSpaceModel(
-        transition_matrix=jnp.array([[1.0]]),
+        system_matrix=jnp.array([[1.0]]),
         observation_matrix=jnp.array([[1.0]]),
-        state_noise_cov=jnp.array([[1469.1]]),
-        obs_noise_cov=jnp.array([[15099.0]]),
+        evolution_cov=jnp.array([[1469.1]]),
+        obs_cov=jnp.array([[15099.0]]),
     )
     obs = NILE.reshape(-1, 1)
     fr = kalman_filter(model, obs)

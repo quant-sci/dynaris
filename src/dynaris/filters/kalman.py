@@ -39,15 +39,15 @@ def predict(
     model: StateSpaceModel,
     u: Array | None = None,
 ) -> GaussianState:
-    """Kalman predict step (time update).
+    """Kalman predict step (prior / time update).
 
-    x_{t|t-1} = F @ x_{t-1|t-1} + B @ u_t
-    P_{t|t-1} = F @ P_{t-1|t-1} @ F^T + Q
+    a_t = G @ m_{t-1}
+    R_t = G @ C_{t-1} @ G' + W
     """
-    mean = model.F @ state.mean
+    mean = model.G @ state.mean
     if u is not None and model.input_matrix is not None:
         mean = mean + model.input_matrix @ u
-    cov = model.F @ state.cov @ model.F.T + model.Q
+    cov = model.G @ state.cov @ model.G.T + model.W
     return GaussianState(mean=mean, cov=cov)
 
 
@@ -62,25 +62,22 @@ def update(
     Handles missing observations (NaN) by skipping the update.
     """
     y = observation
-    innovation = y - model.H @ predicted.mean  # (m,)
-    innovation_cov = model.H @ predicted.cov @ model.H.T + model.R  # (m, m)
+    e = y - model.F @ predicted.mean  # forecast error (m,)
+    q_t = model.F @ predicted.cov @ model.F.T + model.V  # forecast variance (m, m)
 
-    # Kalman gain: K = P_pred @ H^T @ S^{-1}
-    kalman_gain = jnp.linalg.solve(
-        innovation_cov.T, (predicted.cov @ model.H.T).T
+    # Adaptive coefficient (Kalman gain): A = R @ F @ Q^{-1}
+    adaptive_coeff = jnp.linalg.solve(
+        q_t.T, (predicted.cov @ model.F.T).T
     ).T  # (n, m)
 
-    filtered_mean = predicted.mean + kalman_gain @ innovation
-    # Joseph form for numerical stability:
-    # P = (I - K @ H) @ P_pred @ (I - K @ H)^T + K @ R @ K^T
-    # Simplified (equivalent for exact arithmetic):
+    filtered_mean = predicted.mean + adaptive_coeff @ e
     identity = jnp.eye(predicted.mean.shape[-1])
-    filtered_cov = (identity - kalman_gain @ model.H) @ predicted.cov
+    filtered_cov = (identity - adaptive_coeff @ model.F) @ predicted.cov
 
-    # Log-likelihood contribution: log N(innovation; 0, S)
+    # Log-likelihood: log N(e; 0, Q_t)
     m = observation.shape[-1]
-    log_det = jnp.linalg.slogdet(innovation_cov)[1]
-    mahal = innovation @ jnp.linalg.solve(innovation_cov, innovation)
+    log_det = jnp.linalg.slogdet(q_t)[1]
+    mahal = e @ jnp.linalg.solve(q_t, e)
     ll = -0.5 * (m * jnp.log(2.0 * jnp.pi) + log_det + mahal)
 
     # Handle missing observations: if any element is NaN, skip update

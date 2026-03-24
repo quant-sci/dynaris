@@ -24,10 +24,10 @@ NILE = jnp.array([
 
 def _local_level(q: float = 1000.0, r: float = 10000.0) -> StateSpaceModel:
     return StateSpaceModel(
-        transition_matrix=jnp.array([[1.0]]),
+        system_matrix=jnp.array([[1.0]]),
         observation_matrix=jnp.array([[1.0]]),
-        state_noise_cov=jnp.array([[q]]),
-        obs_noise_cov=jnp.array([[r]]),
+        evolution_cov=jnp.array([[q]]),
+        obs_cov=jnp.array([[r]]),
     )
 
 
@@ -90,8 +90,8 @@ def test_em_on_simulated_data() -> None:
     model = _local_level(q=1.0, r=1.0)
     result = fit_em(obs, model, max_iter=100, tol=1e-6)
 
-    fitted_q = float(result.model.Q[0, 0])
-    fitted_r = float(result.model.R[0, 0])
+    fitted_w = float(result.model.W[0, 0])
+    fitted_v = float(result.model.V[0, 0])
     # Should be within a factor of 3 of truth (EM can be noisy)
-    assert true_q / 3 < fitted_q < true_q * 3, f"Q={fitted_q}, true={true_q}"
-    assert true_r / 3 < fitted_r < true_r * 3, f"R={fitted_r}, true={true_r}"
+    assert true_q / 3 < fitted_w < true_q * 3, f"W={fitted_w}, true={true_q}"
+    assert true_r / 3 < fitted_v < true_r * 3, f"V={fitted_v}, true={true_r}"

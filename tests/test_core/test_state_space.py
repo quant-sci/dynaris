@@ -11,10 +11,10 @@ def _make_ssm(
     state_dim: int = 2, obs_dim: int = 1, with_B: bool = False
 ) -> StateSpaceModel:
     kwargs: dict = dict(
-        transition_matrix=jnp.eye(state_dim),
+        system_matrix=jnp.eye(state_dim),
         observation_matrix=jnp.ones((obs_dim, state_dim)),
-        state_noise_cov=jnp.eye(state_dim) * 0.1,
-        obs_noise_cov=jnp.eye(obs_dim),
+        evolution_cov=jnp.eye(state_dim) * 0.1,
+        obs_cov=jnp.eye(obs_dim),
     )
     if with_B:
         kwargs["input_matrix"] = jnp.ones((state_dim, 1))
@@ -29,10 +29,10 @@ def test_dimensions() -> None:
 
 def test_aliases() -> None:
     ssm = _make_ssm()
-    assert ssm.F is ssm.transition_matrix
-    assert ssm.H is ssm.observation_matrix
-    assert ssm.Q is ssm.state_noise_cov
-    assert ssm.R is ssm.obs_noise_cov
+    assert ssm.F is ssm.observation_matrix
+    assert ssm.G is ssm.system_matrix
+    assert ssm.V is ssm.obs_cov
+    assert ssm.W is ssm.evolution_cov
     assert ssm.B is ssm.input_matrix
 
 
@@ -58,10 +58,10 @@ def test_jit_compatibility() -> None:
     ssm = _make_ssm(3, 1)
 
     @jax.jit
-    def trace_F(m: StateSpaceModel) -> jax.Array:
-        return jnp.trace(m.F)
+    def trace_G(m: StateSpaceModel) -> jax.Array:
+        return jnp.trace(m.G)
 
-    assert float(trace_F(ssm)) == 3.0
+    assert float(trace_G(ssm)) == 3.0
 
 
 def test_add_block_diagonal() -> None:
@@ -71,21 +71,21 @@ def test_add_block_diagonal() -> None:
 
     assert s3.state_dim == 5
     assert s3.obs_dim == 1
-    assert s3.F.shape == (5, 5)
-    assert s3.H.shape == (1, 5)
-    assert s3.Q.shape == (5, 5)
-    assert s3.R.shape == (1, 1)
+    assert s3.G.shape == (5, 5)
+    assert s3.F.shape == (1, 5)
+    assert s3.W.shape == (5, 5)
+    assert s3.V.shape == (1, 1)
 
-    # F should be block-diagonal identity
-    assert float(jnp.trace(s3.F)) == 5.0
-    assert float(s3.F[0, 2]) == 0.0  # off-diagonal block is zero
+    # G should be block-diagonal identity
+    assert float(jnp.trace(s3.G)) == 5.0
+    assert float(s3.G[0, 2]) == 0.0  # off-diagonal block is zero
 
-    # H should be horizontal concatenation
-    assert float(s3.H[0, 0]) == 1.0
-    assert float(s3.H[0, 4]) == 1.0
+    # F should be horizontal concatenation
+    assert float(s3.F[0, 0]) == 1.0
+    assert float(s3.F[0, 4]) == 1.0
 
-    # R should be additive
-    assert float(s3.R[0, 0]) == 2.0
+    # V should be additive
+    assert float(s3.V[0, 0]) == 2.0
 
     # No B
     assert s3.B is None
@@ -122,7 +122,7 @@ def test_add_under_jit() -> None:
 
     @jax.jit
     def compose_trace(a: StateSpaceModel, b: StateSpaceModel) -> jax.Array:
-        return jnp.trace((a + b).F)
+        return jnp.trace((a + b).G)
 
     assert float(compose_trace(s1, s2)) == 5.0
 

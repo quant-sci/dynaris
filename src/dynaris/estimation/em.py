@@ -52,8 +52,7 @@ def _m_step(
                                 - F (P_{t,t-1|T} + x_{t|T} x_{t-1|T}^T)^T
                                 + F (P_{t-1|T} + x_{t-1|T} x_{t-1|T}^T) F^T]
 
-        R_new = (1/T) * sum_t [(y_t - H x_{t|T})(y_t - H x_{t|T})^T
-                                + H P_{t|T} H^T]
+        V_new = (1/T) * sum_t [(Y_t - F' m_t^s)(Y_t - F' m_t^s)' + F' C_t^s F]
 
     We use a simplified version that directly estimates the
     diagonal variances, which is standard for DLM applications.
@@ -63,40 +62,34 @@ def _m_step(
     p_smooth = sr.smoothed_covariances  # (T, n, n)
     n_time = obs.shape[0]
 
-    # --- Estimate R (observation noise covariance) ---
-    # residual_t = y_t - H @ x_{t|T}
-    residuals = obs - (x_smooth @ model.H.T)  # (T, m)
-    # R = (1/T) * sum_t [r_t r_t^T + H P_{t|T} H^T]
+    # --- Estimate V (observational variance) ---
+    # residual_t = Y_t - F' @ m_t^(s)
+    residuals = obs - (x_smooth @ model.F.T)  # (T, m)
+    # V = (1/T) * sum_t [r_t r_t' + F' C_t^(s) F]
     outer_sum = jnp.einsum("ti,tj->ij", residuals, residuals)  # (m, m)
-    hp_ht_sum = jnp.sum(model.H @ p_smooth @ model.H.T, axis=0)  # sum over T -> (m, m)
-    new_r = (outer_sum + hp_ht_sum) / n_time
+    fc_f_sum = jnp.sum(model.F @ p_smooth @ model.F.T, axis=0)  # sum over T -> (m, m)
+    new_v = (outer_sum + fc_f_sum) / n_time
 
-    # --- Estimate Q (state noise covariance) ---
-    # Using: Q = (1/T) sum_t [P_{t|T} + (x_t - F x_{t-1})(x_t - F x_{t-1})^T
-    #                          - F P_{t-1,t|T}^T - P_{t-1,t|T} F^T + F P_{t-1|T} F^T]
-    # Simplified: approximate cross-covariance P_{t,t-1|T} via smoother gain
-    # For practical DLM usage, we use:
-    #   state_resid_t = x_{t|T} - F @ x_{t-1|T}
-    #   Q ~ (1/(T-1)) sum_t [state_resid_t state_resid_t^T + P_{t|T} + F P_{t-1|T} F^T]
-    # But a cleaner standard approach for the diagonal case:
-    x_pred = (x_smooth[:-1] @ model.F.T)  # F @ x_{t-1|T}, shape (T-1, n)
+    # --- Estimate W (evolution covariance) ---
+    # state_resid_t = m_t^(s) - G @ m_{t-1}^(s)
+    x_pred = (x_smooth[:-1] @ model.G.T)  # G @ m_{t-1}^(s), shape (T-1, n)
     state_resids = x_smooth[1:] - x_pred  # (T-1, n)
-    outer_q = jnp.einsum("ti,tj->ij", state_resids, state_resids)  # (n, n)
+    outer_w = jnp.einsum("ti,tj->ij", state_resids, state_resids)  # (n, n)
     # Add smoothed covariance terms
-    p_curr = jnp.sum(p_smooth[1:], axis=0)  # sum P_{t|T} for t=1..T-1
-    fp_ft = jnp.sum(
-        model.F @ p_smooth[:-1] @ model.F.T, axis=0
-    )  # sum F P_{t-1|T} F^T
-    new_q = (outer_q + p_curr + fp_ft) / (n_time - 1)
+    p_curr = jnp.sum(p_smooth[1:], axis=0)  # sum C_t^(s) for t=1..T-1
+    gp_gt = jnp.sum(
+        model.G @ p_smooth[:-1] @ model.G.T, axis=0
+    )  # sum G C_{t-1}^(s) G'
+    new_w = (outer_w + p_curr + gp_gt) / (n_time - 1)
     # Ensure symmetry
-    new_q = (new_q + new_q.T) / 2.0
-    new_r = (new_r + new_r.T) / 2.0
+    new_w = (new_w + new_w.T) / 2.0
+    new_v = (new_v + new_v.T) / 2.0
 
     return StateSpaceModel(
-        transition_matrix=model.transition_matrix,
         observation_matrix=model.observation_matrix,
-        state_noise_cov=new_q,
-        obs_noise_cov=new_r,
+        system_matrix=model.system_matrix,
+        obs_cov=new_v,
+        evolution_cov=new_w,
         input_matrix=model.input_matrix,
     )
 

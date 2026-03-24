@@ -39,10 +39,10 @@ def _local_level_model(
 ) -> StateSpaceModel:
     """Simple local-level (random walk + noise) model."""
     return StateSpaceModel(
-        transition_matrix=jnp.array([[1.0]]),
+        system_matrix=jnp.array([[1.0]]),
         observation_matrix=jnp.array([[1.0]]),
-        state_noise_cov=jnp.array([[sigma_level**2]]),
-        obs_noise_cov=jnp.array([[sigma_obs**2]]),
+        evolution_cov=jnp.array([[sigma_level**2]]),
+        obs_cov=jnp.array([[sigma_obs**2]]),
     )
 
 
@@ -62,10 +62,10 @@ def test_predict_identity_transition() -> None:
 
 def test_predict_with_control_input() -> None:
     model = StateSpaceModel(
-        transition_matrix=jnp.array([[1.0]]),
+        system_matrix=jnp.array([[1.0]]),
         observation_matrix=jnp.array([[1.0]]),
-        state_noise_cov=jnp.array([[0.1]]),
-        obs_noise_cov=jnp.array([[1.0]]),
+        evolution_cov=jnp.array([[0.1]]),
+        obs_cov=jnp.array([[1.0]]),
         input_matrix=jnp.array([[2.0]]),
     )
     state = GaussianState(mean=jnp.array([0.0]), cov=jnp.array([[1.0]]))
@@ -191,10 +191,10 @@ def test_kalman_filter_with_missing_obs() -> None:
 
 def test_kalman_filter_with_inputs() -> None:
     model = StateSpaceModel(
-        transition_matrix=jnp.array([[1.0]]),
+        system_matrix=jnp.array([[1.0]]),
         observation_matrix=jnp.array([[1.0]]),
-        state_noise_cov=jnp.array([[0.1]]),
-        obs_noise_cov=jnp.array([[1.0]]),
+        evolution_cov=jnp.array([[0.1]]),
+        obs_cov=jnp.array([[1.0]]),
         input_matrix=jnp.array([[1.0]]),
     )
     observations = jnp.ones((10, 1)) * 5.0
@@ -240,10 +240,10 @@ def test_grad_through_filter() -> None:
 
     def neg_ll(log_sigma_level: Array, log_sigma_obs: Array) -> Array:
         model = StateSpaceModel(
-            transition_matrix=jnp.array([[1.0]]),
+            system_matrix=jnp.array([[1.0]]),
             observation_matrix=jnp.array([[1.0]]),
-            state_noise_cov=jnp.exp(log_sigma_level) * jnp.eye(1),
-            obs_noise_cov=jnp.exp(log_sigma_obs) * jnp.eye(1),
+            evolution_cov=jnp.exp(log_sigma_level) * jnp.eye(1),
+            obs_cov=jnp.exp(log_sigma_obs) * jnp.eye(1),
         )
         result = kalman_filter(model, observations)
         return -result.log_likelihood
@@ -262,10 +262,10 @@ def test_grad_through_filter() -> None:
 def test_kalman_filter_multivariate() -> None:
     """Test with a 2D state, 2D observation model."""
     model = StateSpaceModel(
-        transition_matrix=jnp.eye(2) * 0.99,
+        system_matrix=jnp.eye(2) * 0.99,
         observation_matrix=jnp.eye(2),
-        state_noise_cov=jnp.eye(2) * 0.1,
-        obs_noise_cov=jnp.eye(2) * 1.0,
+        evolution_cov=jnp.eye(2) * 0.1,
+        obs_cov=jnp.eye(2) * 1.0,
     )
     key = jax.random.PRNGKey(42)
     observations = jax.random.normal(key, (50, 2))

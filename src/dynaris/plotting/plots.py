@@ -1,4 +1,4 @@
-"""Plot functions for DLM results — minimalist, precise, clean, cividis."""
+"""Plot functions for DLM results — minimalist, grays with blue CIs."""
 
 from __future__ import annotations
 
@@ -42,12 +42,12 @@ def plot_filtered(
     """
     obs = np.asarray(filter_result.observations[:, component])
     fitted = np.asarray(
-        filter_result.filtered_states @ model.H.T
+        filter_result.filtered_states @ model.F.T
     )[:, component]
     lower, upper = confidence_bands(
-        filter_result.filtered_states @ model.H.T,
-        jnp.einsum("ij,tjk,lk->til", model.H, filter_result.filtered_covariances, model.H)
-        + model.R[None, :, :],
+        filter_result.filtered_states @ model.F.T,
+        jnp.einsum("ij,tjk,lk->til", model.F, filter_result.filtered_covariances, model.F)
+        + model.V[None, :, :],
         level=level,
     )
     lower = np.asarray(lower)[:, component]
@@ -98,14 +98,14 @@ def plot_smoothed(
     """
     obs = np.asarray(smoother_result.observations[:, component])
     smoothed = np.asarray(
-        smoother_result.smoothed_states @ model.H.T
+        smoother_result.smoothed_states @ model.F.T
     )[:, component]
     lower, upper = confidence_bands(
-        smoother_result.smoothed_states @ model.H.T,
+        smoother_result.smoothed_states @ model.F.T,
         jnp.einsum(
-            "ij,tjk,lk->til", model.H, smoother_result.smoothed_covariances, model.H
+            "ij,tjk,lk->til", model.F, smoother_result.smoothed_covariances, model.F
         )
-        + model.R[None, :, :],
+        + model.V[None, :, :],
         level=level,
     )
     lower = np.asarray(lower)[:, component]
@@ -237,7 +237,7 @@ def plot_forecast(
     ax.scatter(t_hist, obs, s=6, color=COLORS["observed"], alpha=0.6, zorder=2, label="Observed")
 
     # Filtered line for history
-    fitted = np.asarray(filter_result.filtered_states @ model.H.T)[:, component]
+    fitted = np.asarray(filter_result.filtered_states @ model.F.T)[:, component]
     if n_history is not None:
         fitted = fitted[-n_history:]
     ax.plot(t_hist, fitted, linewidth=1.0, color=COLORS["secondary"], alpha=0.7, zorder=3)
@@ -248,7 +248,7 @@ def plot_forecast(
     # Fan bands — outer first so inner draws on top
     import matplotlib
 
-    cmap = matplotlib.colormaps[CMAP]
+    cmap = matplotlib.colormaps["Blues"]
     sorted_levels = sorted(levels, reverse=True)
     n_levels = len(sorted_levels)
     for i, lev in enumerate(sorted_levels):

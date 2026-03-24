@@ -16,7 +16,7 @@ def standardized_residuals(
 ) -> Array:
     """Compute standardized (one-step-ahead) prediction residuals.
 
-    e_t = (y_t - H @ x_{t|t-1}) / sqrt(H @ P_{t|t-1} @ H^T + R)
+    e_t = (Y_t - F' a_t) / sqrt(Q_t)  where Q_t = F' R_t F + V
 
     Returns:
         Standardized residuals, shape (T,) for univariate or (T, obs_dim).
@@ -25,14 +25,14 @@ def standardized_residuals(
     pred_states = filter_result.predicted_states  # (T, n)
     pred_covs = filter_result.predicted_covariances  # (T, n, n)
 
-    # Innovation: y_t - H @ x_{t|t-1}
-    innovations = obs - pred_states @ model.H.T  # (T, m)
+    # Forecast error: e_t = Y_t - F' @ a_t
+    innovations = obs - pred_states @ model.F.T  # (T, m)
 
-    # Innovation covariance: H @ P_{t|t-1} @ H^T + R
+    # Forecast variance: Q_t = F' @ R_t @ F + V
     # Shape: (T, m, m)
     innovation_covs = jnp.einsum(
-        "ij,tjk,lk->til", model.H, pred_covs, model.H
-    ) + model.R[None, :, :]
+        "ij,tjk,lk->til", model.F, pred_covs, model.F
+    ) + model.V[None, :, :]
 
     # For univariate case, standardize directly
     # For multivariate, use diagonal elements

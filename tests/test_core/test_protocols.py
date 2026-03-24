@@ -95,10 +95,10 @@ def test_non_conforming_class() -> None:
 def test_dummy_filter_scan() -> None:
     f = DummyFilter()
     ssm = StateSpaceModel(
-        transition_matrix=jnp.eye(2),
+        system_matrix=jnp.eye(2),
         observation_matrix=jnp.ones((1, 2)),
-        state_noise_cov=jnp.eye(2) * 0.1,
-        obs_noise_cov=jnp.array([[1.0]]),
+        evolution_cov=jnp.eye(2) * 0.1,
+        obs_cov=jnp.array([[1.0]]),
     )
     obs = jnp.ones((5, 1))
     result = f.scan(ssm, obs)

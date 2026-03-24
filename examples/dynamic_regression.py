@@ -32,10 +32,10 @@ y = true_beta * x + noise
 # constructing the observation matrix from the predictor.
 # For simplicity, we build a custom StateSpaceModel directly.
 model = StateSpaceModel(
-    transition_matrix=jnp.array([[1.0]]),       # random walk
+    system_matrix=jnp.array([[1.0]]),       # random walk
     observation_matrix=jnp.array([[1.0]]),       # placeholder (x varies)
-    state_noise_cov=jnp.array([[0.01]]),         # coefficient drift
-    obs_noise_cov=jnp.array([[4.0]]),            # observation noise
+    evolution_cov=jnp.array([[0.01]]),         # coefficient drift
+    obs_cov=jnp.array([[4.0]]),            # observation noise
 )
 
 # Since the observation matrix varies with x_t, we incorporate x

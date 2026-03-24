@@ -26,10 +26,10 @@ NILE = jnp.array([
 def _local_level_factory(params: jnp.ndarray) -> StateSpaceModel:
     """Model factory: params = [log(sigma_level^2), log(sigma_obs^2)]."""
     return StateSpaceModel(
-        transition_matrix=jnp.array([[1.0]]),
+        system_matrix=jnp.array([[1.0]]),
         observation_matrix=jnp.array([[1.0]]),
-        state_noise_cov=jnp.exp(params[0:1, None]) * jnp.eye(1),
-        obs_noise_cov=jnp.exp(params[1:2, None]) * jnp.eye(1),
+        evolution_cov=jnp.exp(params[0:1, None]) * jnp.eye(1),
+        obs_cov=jnp.exp(params[1:2, None]) * jnp.eye(1),
     )
 
 

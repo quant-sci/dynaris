@@ -76,9 +76,9 @@ def rts_smooth(
         pred_mean = inputs.predicted_mean
         pred_cov = inputs.predicted_cov
 
-        # Smoother gain: G_t = P_{t|t} @ F^T @ P_{t+1|t}^{-1}
+        # Smoother gain: B_t = C_t @ G' @ R_{t+1}^{-1}
         gain = jnp.linalg.solve(
-            pred_cov.T, (filt_cov @ model.F.T).T
+            pred_cov.T, (filt_cov @ model.G.T).T
         ).T
 
         # Smoothed estimates

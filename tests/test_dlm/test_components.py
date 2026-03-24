@@ -29,8 +29,8 @@ def test_local_level_shapes() -> None:
     m = LocalLevel(sigma_level=2.0, sigma_obs=3.0)
     assert m.state_dim == 1
     assert m.obs_dim == 1
-    assert float(m.Q[0, 0]) == 4.0
-    assert float(m.R[0, 0]) == 9.0
+    assert float(m.W[0, 0]) == 4.0
+    assert float(m.V[0, 0]) == 9.0
 
 
 def test_local_level_filter_on_synthetic() -> None:
@@ -58,10 +58,10 @@ def test_local_linear_trend_shapes() -> None:
     m = LocalLinearTrend(sigma_level=1.0, sigma_slope=0.5, sigma_obs=2.0)
     assert m.state_dim == 2
     assert m.obs_dim == 1
-    # F = [[1, 1], [0, 1]]
-    np.testing.assert_allclose(m.F, [[1, 1], [0, 1]])
-    # H = [[1, 0]]
-    np.testing.assert_allclose(m.H, [[1, 0]])
+    # G = [[1, 1], [0, 1]]
+    np.testing.assert_allclose(m.G, [[1, 1], [0, 1]])
+    # F = [[1, 0]]
+    np.testing.assert_allclose(m.F, [[1, 0]])
 
 
 def test_local_linear_trend_filter_on_trend_data() -> None:
@@ -87,9 +87,9 @@ def test_seasonal_dummy_shapes() -> None:
     m = Seasonal(period=12, form="dummy")
     assert m.state_dim == 11  # period - 1
     assert m.obs_dim == 1
-    assert m.F.shape == (11, 11)
+    assert m.G.shape == (11, 11)
     # First row should be all -1
-    np.testing.assert_allclose(m.F[0, :], -jnp.ones(11))
+    np.testing.assert_allclose(m.G[0, :], -jnp.ones(11))
 
 
 def test_seasonal_dummy_filter_on_periodic_data() -> None:
@@ -157,13 +157,13 @@ def test_regression_shapes() -> None:
     m = Regression(n_regressors=3, sigma_coeff=0.1, sigma_obs=1.0)
     assert m.state_dim == 3
     assert m.obs_dim == 1
-    np.testing.assert_allclose(m.F, jnp.eye(3))
+    np.testing.assert_allclose(m.G, jnp.eye(3))
 
 
 def test_regression_static_coefficients() -> None:
-    """With sigma_coeff=0, Q is zero (static coefficients)."""
+    """With sigma_coeff=0, W is zero (static coefficients)."""
     m = Regression(n_regressors=2, sigma_coeff=0.0)
-    np.testing.assert_allclose(m.Q, jnp.zeros((2, 2)))
+    np.testing.assert_allclose(m.W, jnp.zeros((2, 2)))
 
 
 # ===================================================================
@@ -176,22 +176,22 @@ def test_autoregressive_shapes() -> None:
     assert m.state_dim == 3
     assert m.obs_dim == 1
     # Companion form: first row zeros (no coefficients), shift below
-    np.testing.assert_allclose(m.F[0, :], [0, 0, 0])
-    np.testing.assert_allclose(m.F[1:, :-1], jnp.eye(2))
+    np.testing.assert_allclose(m.G[0, :], [0, 0, 0])
+    np.testing.assert_allclose(m.G[1:, :-1], jnp.eye(2))
 
 
 def test_autoregressive_with_coefficients() -> None:
     phi = jnp.array([0.8, -0.2])
     m = Autoregressive(order=2, coefficients=phi)
-    np.testing.assert_allclose(m.F[0, :], [0.8, -0.2])
-    np.testing.assert_allclose(m.F[1, :], [1.0, 0.0])
+    np.testing.assert_allclose(m.G[0, :], [0.8, -0.2])
+    np.testing.assert_allclose(m.G[1, :], [1.0, 0.0])
 
 
 def test_autoregressive_order_1() -> None:
     phi = jnp.array([0.9])
     m = Autoregressive(order=1, coefficients=phi)
     assert m.state_dim == 1
-    np.testing.assert_allclose(m.F, [[0.9]])
+    np.testing.assert_allclose(m.G, [[0.9]])
 
 
 def test_autoregressive_filter_on_ar_data() -> None:
@@ -238,14 +238,14 @@ def test_cycle_undamped_rotation() -> None:
         [jnp.cos(freq), jnp.sin(freq)],
         [-jnp.sin(freq), jnp.cos(freq)],
     ])
-    np.testing.assert_allclose(m.F, expected_f, atol=1e-6)
+    np.testing.assert_allclose(m.G, expected_f, atol=1e-6)
 
 
 def test_cycle_damped() -> None:
     """Damped cycle: eigenvalues should have magnitude = damping."""
     rho = 0.9
     m = Cycle(period=8.0, damping=rho)
-    eigenvalues = jnp.linalg.eigvals(m.F)
+    eigenvalues = jnp.linalg.eigvals(m.G)
     magnitudes = jnp.abs(eigenvalues)
     np.testing.assert_allclose(magnitudes, rho, atol=1e-5)
 
@@ -275,9 +275,9 @@ def test_compose_level_plus_seasonal() -> None:
     # State dim: 1 (level) + 3 (seasonal, period-1) = 4
     assert composed.state_dim == 4
     assert composed.obs_dim == 1
-    assert composed.F.shape == (4, 4)
+    assert composed.G.shape == (4, 4)
     # Obs noise adds: 0.5^2 + 0.5^2 = 0.5
-    np.testing.assert_allclose(composed.R, [[0.5]], atol=1e-6)
+    np.testing.assert_allclose(composed.V, [[0.5]], atol=1e-6)
 
 
 def test_compose_trend_plus_seasonal() -> None:

@@ -33,10 +33,10 @@ def _local_level_model(
     sigma_level: float = 1.0, sigma_obs: float = 1.0
 ) -> StateSpaceModel:
     return StateSpaceModel(
-        transition_matrix=jnp.array([[1.0]]),
+        system_matrix=jnp.array([[1.0]]),
         observation_matrix=jnp.array([[1.0]]),
-        state_noise_cov=jnp.array([[sigma_level**2]]),
-        obs_noise_cov=jnp.array([[sigma_obs**2]]),
+        evolution_cov=jnp.array([[sigma_level**2]]),
+        obs_cov=jnp.array([[sigma_obs**2]]),
     )
 
 
@@ -128,10 +128,10 @@ def test_grad_through_smoother() -> None:
 
     def smoothed_state_loss(log_q: jax.Array) -> jax.Array:
         model = StateSpaceModel(
-            transition_matrix=jnp.array([[1.0]]),
+            system_matrix=jnp.array([[1.0]]),
             observation_matrix=jnp.array([[1.0]]),
-            state_noise_cov=jnp.exp(log_q) * jnp.eye(1),
-            obs_noise_cov=jnp.array([[15000.0]]),
+            evolution_cov=jnp.exp(log_q) * jnp.eye(1),
+            obs_cov=jnp.array([[15000.0]]),
         )
         fr = kalman_filter(model, observations)
         sr = rts_smooth(model, fr)
@@ -149,10 +149,10 @@ def test_grad_through_smoother() -> None:
 
 def test_rts_smooth_multivariate() -> None:
     model = StateSpaceModel(
-        transition_matrix=jnp.eye(2) * 0.99,
+        system_matrix=jnp.eye(2) * 0.99,
         observation_matrix=jnp.eye(2),
-        state_noise_cov=jnp.eye(2) * 0.1,
-        obs_noise_cov=jnp.eye(2) * 1.0,
+        evolution_cov=jnp.eye(2) * 0.1,
+        obs_cov=jnp.eye(2) * 1.0,
     )
     key = jax.random.PRNGKey(42)
     observations = jax.random.normal(key, (50, 2))

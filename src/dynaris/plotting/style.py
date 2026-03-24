@@ -1,4 +1,4 @@
-"""Shared plot styling for dynaris — minimalist, precise, clean, cividis."""
+"""Shared plot styling for dynaris — minimalist, precise, clean."""
 
 from __future__ import annotations
 
@@ -9,19 +9,19 @@ import numpy as np
 from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
-# Cividis palette — sampled at key points for consistent use
+# Grays for lines/points, blues for confidence intervals
 COLORS = {
-    "primary": "#FDEA45",     # cividis bright (yellow)
-    "secondary": "#7A7B43",   # cividis mid (olive)
-    "tertiary": "#456E80",    # cividis mid-dark (steel blue)
-    "dark": "#1E3F5A",        # cividis deep (dark blue)
-    "darkest": "#00204D",     # cividis darkest (navy)
-    "observed": "#7A7A7A",    # neutral gray for data points
-    "ci_fill": "#7A7B43",     # confidence band fill
-    "ci_fill_alt": "#456E80", # alternate band color
+    "primary": "#F0F0F0",     # light gray
+    "secondary": "#4D4D4D",   # dark gray (main line)
+    "tertiary": "#808080",    # mid gray
+    "dark": "#2B2B2B",        # near-black
+    "darkest": "#1A1A1A",     # darkest gray
+    "observed": "#999999",    # neutral gray for data points
+    "ci_fill": "#4A90C4",     # blue confidence band
+    "ci_fill_alt": "#2166AC", # deeper blue alternate band
 }
 
-CMAP = "cividis"
+CMAP = "Greys"
 
 
 def apply_style(ax: Axes) -> None:
