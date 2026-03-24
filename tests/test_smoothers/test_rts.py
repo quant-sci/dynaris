@@ -17,9 +17,7 @@ from dynaris.smoothers.rts import RTSSmoother, rts_smooth
 NILE = load_nile_jax()
 
 
-def _local_level_model(
-    sigma_level: float = 1.0, sigma_obs: float = 1.0
-) -> StateSpaceModel:
+def _local_level_model(sigma_level: float = 1.0, sigma_obs: float = 1.0) -> StateSpaceModel:
     return StateSpaceModel(
         system_matrix=jnp.array([[1.0]]),
         observation_matrix=jnp.array([[1.0]]),
@@ -75,9 +73,7 @@ def test_smoothed_variance_leq_filtered() -> None:
 def test_last_smoothed_equals_last_filtered() -> None:
     """At the last time step, smoothed == filtered."""
     _, sr = _run_filter_and_smooth()
-    np.testing.assert_allclose(
-        sr.smoothed_states[-1], sr.filtered_states[-1], atol=1e-5
-    )
+    np.testing.assert_allclose(sr.smoothed_states[-1], sr.filtered_states[-1], atol=1e-5)
     np.testing.assert_allclose(
         sr.smoothed_covariances[-1],
         sr.filtered_covariances[-1],
@@ -105,9 +101,7 @@ def test_rts_smooth_jit() -> None:
     # rts_smooth is @jax.jit, calling twice checks tracing
     sr1 = rts_smooth(model, fr)
     sr2 = rts_smooth(model, fr)
-    np.testing.assert_allclose(
-        sr1.smoothed_states, sr2.smoothed_states, atol=1e-5
-    )
+    np.testing.assert_allclose(sr1.smoothed_states, sr2.smoothed_states, atol=1e-5)
 
 
 def test_grad_through_smoother() -> None:
@@ -164,20 +158,14 @@ def test_smoother_more_accurate_than_filter() -> None:
     n_steps = 200
 
     true_states = jnp.cumsum(jax.random.normal(k1, (n_steps,)) * 1.0)
-    observations = (
-        true_states + jax.random.normal(k2, (n_steps,)) * 5.0
-    ).reshape(-1, 1)
+    observations = (true_states + jax.random.normal(k2, (n_steps,)) * 5.0).reshape(-1, 1)
 
     model = _local_level_model(sigma_level=1.0, sigma_obs=5.0)
     fr = kalman_filter(model, observations)
     sr = rts_smooth(model, fr)
 
-    filter_mse = float(
-        jnp.mean((fr.filtered_states[:, 0] - true_states) ** 2)
-    )
-    smoother_mse = float(
-        jnp.mean((sr.smoothed_states[:, 0] - true_states) ** 2)
-    )
+    filter_mse = float(jnp.mean((fr.filtered_states[:, 0] - true_states) ** 2))
+    smoother_mse = float(jnp.mean((sr.smoothed_states[:, 0] - true_states) ** 2))
     assert smoother_mse <= filter_mse + 1e-3
 
 

@@ -128,9 +128,7 @@ class DLM:
         """
         obs, self._index = _to_jax_2d(y)
         self._observations = obs
-        self._filter_result = kalman_filter(
-            self._model, obs, initial_state=initial_state
-        )
+        self._filter_result = kalman_filter(self._model, obs, initial_state=initial_state)
         self._smoother_result = None
         self._forecast_result = None
         self._is_fitted = True
@@ -176,9 +174,7 @@ class DLM:
         self._forecast_result = fc
         return self._forecast_to_df(fc, steps)
 
-    def fit_batch(
-        self, y_batch: Any
-    ) -> FilterResult:
+    def fit_batch(self, y_batch: Any) -> FilterResult:
         """Fit multiple series in parallel via ``jax.vmap``.
 
         Args:
@@ -269,7 +265,9 @@ class DLM:
                 msg = "No forecast available. Call .forecast() first."
                 raise RuntimeError(msg)
             return plot_forecast(
-                self.filter_result, self._forecast_result, self._model,
+                self.filter_result,
+                self._forecast_result,
+                self._model,
                 **kwargs,
             )
         if kind == "diagnostics":
@@ -313,9 +311,7 @@ class DLM:
 
     # --- Private helpers ---
 
-    def _forecast_to_df(
-        self, fc: ForecastResult, steps: int
-    ) -> pd.DataFrame:
+    def _forecast_to_df(self, fc: ForecastResult, steps: int) -> pd.DataFrame:
         """Convert ForecastResult to a pandas DataFrame."""
         mean = np.asarray(fc.mean)
         lower_arr, upper_arr = confidence_bands(fc.mean, fc.covariance)
@@ -347,7 +343,4 @@ class DLM:
 
     def __repr__(self) -> str:
         status = "fitted" if self._is_fitted else "not fitted"
-        return (
-            f"DLM(state_dim={self._model.state_dim}, "
-            f"obs_dim={self._model.obs_dim}, {status})"
-        )
+        return f"DLM(state_dim={self._model.state_dim}, obs_dim={self._model.obs_dim}, {status})"

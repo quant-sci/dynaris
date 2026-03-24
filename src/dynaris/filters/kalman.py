@@ -66,9 +66,7 @@ def update(
     q_t = model.F @ predicted.cov @ model.F.T + model.V  # forecast variance (m, m)
 
     # Adaptive coefficient (Kalman gain): A = R @ F @ Q^{-1}
-    adaptive_coeff = jnp.linalg.solve(
-        q_t.T, (predicted.cov @ model.F.T).T
-    ).T  # (n, m)
+    adaptive_coeff = jnp.linalg.solve(q_t.T, (predicted.cov @ model.F.T).T).T  # (n, m)
 
     filtered_mean = predicted.mean + adaptive_coeff @ e
     identity = jnp.eye(predicted.mean.shape[-1])

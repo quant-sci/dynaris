@@ -163,9 +163,7 @@ def confidence_bands(
 
     if covariances.ndim >= 2 and covariances.shape[-1] == covariances.shape[-2]:
         # (..., d, d) covariance matrices -> extract diagonal variances
-        std_devs = jnp.sqrt(
-            jnp.diagonal(covariances, axis1=-2, axis2=-1)
-        )
+        std_devs = jnp.sqrt(jnp.diagonal(covariances, axis1=-2, axis2=-1))
     else:
         # Already variances, same shape as means
         std_devs = jnp.sqrt(covariances)

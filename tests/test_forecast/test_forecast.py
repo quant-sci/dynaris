@@ -68,9 +68,7 @@ def test_forecast_local_level_constant_mean() -> None:
     result = forecast(model, state, steps=10)
 
     # Mean should be constant for random walk
-    np.testing.assert_allclose(
-        result.mean[:, 0], 850.0 * jnp.ones(10), atol=1e-4
-    )
+    np.testing.assert_allclose(result.mean[:, 0], 850.0 * jnp.ones(10), atol=1e-4)
 
 
 def test_forecast_trend_increasing() -> None:
@@ -135,9 +133,7 @@ def test_smoother_forecast_lower_initial_uncertainty() -> None:
     fc_smooth = forecast_from_smoother(model, sr, steps=5)
 
     # At step 1, smoother-based variance should be <= filter-based
-    assert float(fc_smooth.covariance[0, 0, 0]) <= float(
-        fc_filter.covariance[0, 0, 0]
-    ) + 1e-3
+    assert float(fc_smooth.covariance[0, 0, 0]) <= float(fc_filter.covariance[0, 0, 0]) + 1e-3
 
 
 # ===================================================================
@@ -186,9 +182,7 @@ def test_confidence_bands_on_filtered_states() -> None:
     obs = NILE.reshape(-1, 1)
     fr = kalman_filter(model, obs)
 
-    lower, upper = confidence_bands(
-        fr.filtered_states, fr.filtered_covariances
-    )
+    lower, upper = confidence_bands(fr.filtered_states, fr.filtered_covariances)
     assert lower.shape == fr.filtered_states.shape
     assert jnp.all(jnp.isfinite(lower))
     assert jnp.all(jnp.isfinite(upper))
@@ -232,9 +226,7 @@ def test_forecast_batch_matches_individual() -> None:
     for i in range(3):
         fr = kalman_filter(model, batch[i])
         individual = forecast_from_filter(model, fr, steps=5)
-        np.testing.assert_allclose(
-            batch_result.mean[i], individual.mean, atol=1e-4
-        )
+        np.testing.assert_allclose(batch_result.mean[i], individual.mean, atol=1e-4)
 
 
 # ===================================================================
@@ -281,9 +273,8 @@ def test_fit_batch_matches_individual() -> None:
 
 def test_composed_model_forecast() -> None:
     """Forecasting works with composed (trend + seasonal) models."""
-    model = (
-        LocalLinearTrend(sigma_level=1.0, sigma_slope=0.1, sigma_obs=0.0)
-        + Seasonal(period=12, sigma_seasonal=0.5, sigma_obs=2.0)
+    model = LocalLinearTrend(sigma_level=1.0, sigma_slope=0.1, sigma_obs=0.0) + Seasonal(
+        period=12, sigma_seasonal=0.5, sigma_obs=2.0
     )
     t = jnp.arange(60, dtype=jnp.float32)
     obs = (

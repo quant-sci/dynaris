@@ -67,9 +67,7 @@ def rts_smooth(
 
     init_carry = _RTSCarry(smoothed=last_filtered)
 
-    def _rts_step(
-        carry: _RTSCarry, inputs: _RTSScanInput
-    ) -> tuple[_RTSCarry, tuple[Array, Array]]:
+    def _rts_step(carry: _RTSCarry, inputs: _RTSScanInput) -> tuple[_RTSCarry, tuple[Array, Array]]:
         # Unpack filtered[t] and predicted[t+1]
         filt_mean = inputs.filtered_mean
         filt_cov = inputs.filtered_cov
@@ -77,17 +75,11 @@ def rts_smooth(
         pred_cov = inputs.predicted_cov
 
         # Smoother gain: B_t = C_t @ G' @ R_{t+1}^{-1}
-        gain = jnp.linalg.solve(
-            pred_cov.T, (filt_cov @ model.G.T).T
-        ).T
+        gain = jnp.linalg.solve(pred_cov.T, (filt_cov @ model.G.T).T).T
 
         # Smoothed estimates
-        smoothed_mean = (
-            filt_mean + gain @ (carry.smoothed.mean - pred_mean)
-        )
-        smoothed_cov = (
-            filt_cov + gain @ (carry.smoothed.cov - pred_cov) @ gain.T
-        )
+        smoothed_mean = filt_mean + gain @ (carry.smoothed.mean - pred_mean)
+        smoothed_cov = filt_cov + gain @ (carry.smoothed.cov - pred_cov) @ gain.T
 
         smoothed = GaussianState(mean=smoothed_mean, cov=smoothed_cov)
         new_carry = _RTSCarry(smoothed=smoothed)

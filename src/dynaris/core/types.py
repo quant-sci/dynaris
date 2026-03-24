@@ -30,9 +30,7 @@ class GaussianState:
         return (self.mean, self.cov), None
 
     @classmethod
-    def tree_unflatten(
-        cls, aux_data: None, children: tuple[Array, Array]
-    ) -> GaussianState:
+    def tree_unflatten(cls, aux_data: None, children: tuple[Array, Array]) -> GaussianState:
         """Reconstruct from JAX pytree leaves."""
         return cls(mean=children[0], cov=children[1])
 

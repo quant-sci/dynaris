@@ -32,18 +32,14 @@ class EMResult:
     log_likelihood_history: list[float]
 
 
-def _e_step(
-    model: StateSpaceModel, observations: Array
-) -> tuple[SmootherResult, float]:
+def _e_step(model: StateSpaceModel, observations: Array) -> tuple[SmootherResult, float]:
     """E-step: run Kalman filter + RTS smoother."""
     fr = kalman_filter(model, observations)
     sr = rts_smooth(model, fr)
     return sr, float(fr.log_likelihood)
 
 
-def _m_step(
-    sr: SmootherResult, model: StateSpaceModel
-) -> StateSpaceModel:
+def _m_step(sr: SmootherResult, model: StateSpaceModel) -> StateSpaceModel:
     """M-step: update Q and R from smoothed sufficient statistics.
 
     For a general linear-Gaussian SSM:
@@ -72,14 +68,12 @@ def _m_step(
 
     # --- Estimate W (evolution covariance) ---
     # state_resid_t = m_t^(s) - G @ m_{t-1}^(s)
-    x_pred = (x_smooth[:-1] @ model.G.T)  # G @ m_{t-1}^(s), shape (T-1, n)
+    x_pred = x_smooth[:-1] @ model.G.T  # G @ m_{t-1}^(s), shape (T-1, n)
     state_resids = x_smooth[1:] - x_pred  # (T-1, n)
     outer_w = jnp.einsum("ti,tj->ij", state_resids, state_resids)  # (n, n)
     # Add smoothed covariance terms
     p_curr = jnp.sum(p_smooth[1:], axis=0)  # sum C_t^(s) for t=1..T-1
-    gp_gt = jnp.sum(
-        model.G @ p_smooth[:-1] @ model.G.T, axis=0
-    )  # sum G C_{t-1}^(s) G'
+    gp_gt = jnp.sum(model.G @ p_smooth[:-1] @ model.G.T, axis=0)  # sum G C_{t-1}^(s) G'
     new_w = (outer_w + p_curr + gp_gt) / (n_time - 1)
     # Ensure symmetry
     new_w = (new_w + new_w.T) / 2.0

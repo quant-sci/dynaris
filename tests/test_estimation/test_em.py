@@ -41,7 +41,7 @@ def test_em_likelihood_monotonically_increases() -> None:
     # Allow small decreases due to the approximate cross-covariance.
     for i in range(1, len(ll_hist)):
         assert ll_hist[i] >= ll_hist[i - 1] - 5.0, (
-            f"LL decreased too much at iter {i}: {ll_hist[i]} < {ll_hist[i-1]}"
+            f"LL decreased too much at iter {i}: {ll_hist[i]} < {ll_hist[i - 1]}"
         )
     # Overall, LL should improve from start to finish
     assert ll_hist[-1] > ll_hist[0]

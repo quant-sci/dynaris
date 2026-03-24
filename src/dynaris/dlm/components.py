@@ -62,9 +62,7 @@ def LocalLinearTrend(  # noqa: N802
     return StateSpaceModel(
         system_matrix=jnp.array([[1.0, 1.0], [0.0, 1.0]]),
         observation_matrix=jnp.array([[1.0, 0.0]]),
-        evolution_cov=jnp.diag(
-            jnp.array([sigma_level**2, sigma_slope**2])
-        ),
+        evolution_cov=jnp.diag(jnp.array([sigma_level**2, sigma_slope**2])),
         obs_cov=jnp.array([[sigma_obs**2]]),
     )
 
@@ -101,9 +99,7 @@ def Seasonal(  # noqa: N802
     raise ValueError(msg)
 
 
-def _seasonal_dummy(
-    period: int, sigma_seasonal: float, sigma_obs: float
-) -> StateSpaceModel:
+def _seasonal_dummy(period: int, sigma_seasonal: float, sigma_obs: float) -> StateSpaceModel:
     """Dummy-variable seasonal: s_t = -s_{t-1} - s_{t-2} - ... - s_{t-p+1}.
 
     State dimension: period - 1.
@@ -128,9 +124,7 @@ def _seasonal_dummy(
     )
 
 
-def _seasonal_fourier(
-    period: int, sigma_seasonal: float, sigma_obs: float
-) -> StateSpaceModel:
+def _seasonal_fourier(period: int, sigma_seasonal: float, sigma_obs: float) -> StateSpaceModel:
     """Fourier-form seasonal using trigonometric harmonics.
 
     Uses floor(period / 2) harmonics. For each harmonic j:
@@ -154,10 +148,12 @@ def _seasonal_fourier(
             blocks.append(jnp.array([[float(cos_f)]]))
         else:
             blocks.append(
-                jnp.array([
-                    [float(cos_f), float(sin_f)],
-                    [float(-sin_f), float(cos_f)],
-                ])
+                jnp.array(
+                    [
+                        [float(cos_f), float(sin_f)],
+                        [float(-sin_f), float(cos_f)],
+                    ]
+                )
             )
 
     # Build block-diagonal transition matrix
@@ -298,10 +294,12 @@ def Cycle(  # noqa: N802
     cos_f = float(jnp.cos(freq))
     sin_f = float(jnp.sin(freq))
 
-    transition = damping * jnp.array([
-        [cos_f, sin_f],
-        [-sin_f, cos_f],
-    ])
+    transition = damping * jnp.array(
+        [
+            [cos_f, sin_f],
+            [-sin_f, cos_f],
+        ]
+    )
 
     observation = jnp.array([[1.0, 0.0]])
 

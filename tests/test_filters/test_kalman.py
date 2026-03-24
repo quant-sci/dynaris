@@ -23,9 +23,7 @@ from dynaris.filters.kalman import KalmanFilter, kalman_filter, predict, update
 NILE = load_nile_jax()
 
 
-def _local_level_model(
-    sigma_level: float = 1.0, sigma_obs: float = 1.0
-) -> StateSpaceModel:
+def _local_level_model(sigma_level: float = 1.0, sigma_obs: float = 1.0) -> StateSpaceModel:
     """Simple local-level (random walk + noise) model."""
     return StateSpaceModel(
         system_matrix=jnp.array([[1.0]]),
@@ -71,9 +69,7 @@ def test_predict_with_control_input() -> None:
 
 def test_update_reduces_uncertainty() -> None:
     model = _local_level_model(sigma_level=1.0, sigma_obs=1.0)
-    predicted = GaussianState(
-        mean=jnp.array([0.0]), cov=jnp.array([[10.0]])
-    )
+    predicted = GaussianState(mean=jnp.array([0.0]), cov=jnp.array([[10.0]]))
     obs = jnp.array([5.0])
     filtered, ll = update(predicted, obs, model)
     # After update, variance should decrease
@@ -86,9 +82,7 @@ def test_update_reduces_uncertainty() -> None:
 
 def test_update_nan_skips() -> None:
     model = _local_level_model()
-    predicted = GaussianState(
-        mean=jnp.array([3.0]), cov=jnp.array([[2.0]])
-    )
+    predicted = GaussianState(mean=jnp.array([3.0]), cov=jnp.array([[2.0]]))
     obs = jnp.array([jnp.nan])
     filtered, ll = update(predicted, obs, model)
     # NaN obs: filtered should equal predicted
@@ -143,9 +137,7 @@ def test_kalman_filter_nile_known_values() -> None:
     """
     sigma_level = jnp.sqrt(1469.1)
     sigma_obs = jnp.sqrt(15099.0)
-    model = _local_level_model(
-        sigma_level=float(sigma_level), sigma_obs=float(sigma_obs)
-    )
+    model = _local_level_model(sigma_level=float(sigma_level), sigma_obs=float(sigma_obs))
     observations = NILE.reshape(-1, 1)
     result = kalman_filter(model, observations)
 
@@ -173,9 +165,7 @@ def test_kalman_filter_with_missing_obs() -> None:
     assert jnp.isfinite(result.log_likelihood)
 
     # At NaN points, predicted == filtered
-    np.testing.assert_allclose(
-        result.filtered_states[10], result.predicted_states[10], atol=1e-5
-    )
+    np.testing.assert_allclose(result.filtered_states[10], result.predicted_states[10], atol=1e-5)
 
 
 def test_kalman_filter_with_inputs() -> None:
@@ -195,15 +185,11 @@ def test_kalman_filter_with_inputs() -> None:
 
 def test_kalman_filter_custom_initial_state() -> None:
     model = _local_level_model(sigma_level=1.0, sigma_obs=1.0)
-    init = GaussianState(
-        mean=jnp.array([1000.0]), cov=jnp.array([[1.0]])
-    )
+    init = GaussianState(mean=jnp.array([1000.0]), cov=jnp.array([[1.0]]))
     observations = NILE[:10].reshape(-1, 1)
     result = kalman_filter(model, observations, initial_state=init)
     # First predicted state should be near our custom initial
-    np.testing.assert_allclose(
-        result.predicted_states[0, 0], 1000.0, atol=1e-4
-    )
+    np.testing.assert_allclose(result.predicted_states[0, 0], 1000.0, atol=1e-4)
 
 
 # ---------------------------------------------------------------------------
@@ -218,9 +204,7 @@ def test_kalman_filter_jit() -> None:
     # kalman_filter is already @jax.jit, calling it twice checks tracing
     r1 = kalman_filter(model, observations)
     r2 = kalman_filter(model, observations)
-    np.testing.assert_allclose(
-        r1.log_likelihood, r2.log_likelihood, atol=1e-5
-    )
+    np.testing.assert_allclose(r1.log_likelihood, r2.log_likelihood, atol=1e-5)
 
 
 def test_grad_through_filter() -> None:
@@ -308,7 +292,5 @@ def test_filter_recovers_simulated_state() -> None:
 
     # Filtered states should correlate well with true states
     filtered = result.filtered_states[:, 0]
-    correlation = jnp.corrcoef(
-        jnp.stack([filtered, true_states])
-    )[0, 1]
+    correlation = jnp.corrcoef(jnp.stack([filtered, true_states]))[0, 1]
     assert float(correlation) > 0.8

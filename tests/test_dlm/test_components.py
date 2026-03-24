@@ -41,9 +41,7 @@ def test_local_level_filter_on_synthetic() -> None:
     result = kalman_filter(model, obs)
     assert jnp.all(jnp.isfinite(result.filtered_states))
     # Filtered should track the true states reasonably
-    corr = jnp.corrcoef(
-        jnp.stack([result.filtered_states[:, 0], true_states])
-    )[0, 1]
+    corr = jnp.corrcoef(jnp.stack([result.filtered_states[:, 0], true_states]))[0, 1]
     assert float(corr) > 0.8
 
 
@@ -65,7 +63,7 @@ def test_local_linear_trend_shapes() -> None:
 def test_local_linear_trend_filter_on_trend_data() -> None:
     """Filter should detect an upward linear trend."""
     t = jnp.arange(100, dtype=jnp.float32)
-    obs = (0.5 * t + jax.random.normal(jax.random.PRNGKey(1), (100,)) * 2.0)
+    obs = 0.5 * t + jax.random.normal(jax.random.PRNGKey(1), (100,)) * 2.0
     obs = obs.reshape(-1, 1)
 
     model = LocalLinearTrend(sigma_level=1.0, sigma_slope=0.1, sigma_obs=2.0)
@@ -95,8 +93,7 @@ def test_seasonal_dummy_filter_on_periodic_data() -> None:
     period = 12
     t = jnp.arange(120, dtype=jnp.float32)
     seasonal_pattern = 10.0 * jnp.sin(2.0 * jnp.pi * t / period)
-    obs = (seasonal_pattern
-           + jax.random.normal(jax.random.PRNGKey(2), (120,)) * 1.0)
+    obs = seasonal_pattern + jax.random.normal(jax.random.PRNGKey(2), (120,)) * 1.0
     obs = obs.reshape(-1, 1)
 
     model = Seasonal(period=period, sigma_seasonal=1.0, sigma_obs=1.0)
@@ -128,12 +125,10 @@ def test_seasonal_fourier_filter() -> None:
     period = 12
     t = jnp.arange(120, dtype=jnp.float32)
     pattern = 5.0 * jnp.cos(2.0 * jnp.pi * t / period)
-    obs = (pattern
-           + jax.random.normal(jax.random.PRNGKey(3), (120,)) * 1.0)
+    obs = pattern + jax.random.normal(jax.random.PRNGKey(3), (120,)) * 1.0
     obs = obs.reshape(-1, 1)
 
-    model = Seasonal(period=period, sigma_seasonal=1.0,
-                     sigma_obs=1.0, form="fourier")
+    model = Seasonal(period=period, sigma_seasonal=1.0, sigma_obs=1.0, form="fourier")
     result = kalman_filter(model, obs)
     assert jnp.all(jnp.isfinite(result.filtered_states))
 
@@ -205,13 +200,13 @@ def test_autoregressive_filter_on_ar_data() -> None:
         return x_new, x_new
 
     _, states = jax.lax.scan(_ar_step, jnp.array(0.0), noise)
-    obs = (states + jax.random.normal(
-        jax.random.PRNGKey(5), (n,)
-    ) * 0.5).reshape(-1, 1)
+    obs = (states + jax.random.normal(jax.random.PRNGKey(5), (n,)) * 0.5).reshape(-1, 1)
 
     model = Autoregressive(
-        order=1, coefficients=jnp.array([phi]),
-        sigma_ar=1.0, sigma_obs=0.5,
+        order=1,
+        coefficients=jnp.array([phi]),
+        sigma_ar=1.0,
+        sigma_obs=0.5,
     )
     result = kalman_filter(model, obs)
     assert jnp.all(jnp.isfinite(result.filtered_states))
@@ -232,10 +227,12 @@ def test_cycle_undamped_rotation() -> None:
     """Undamped cycle: transition matrix should be a rotation."""
     m = Cycle(period=10.0, damping=1.0)
     freq = 2.0 * jnp.pi / 10.0
-    expected_f = jnp.array([
-        [jnp.cos(freq), jnp.sin(freq)],
-        [-jnp.sin(freq), jnp.cos(freq)],
-    ])
+    expected_f = jnp.array(
+        [
+            [jnp.cos(freq), jnp.sin(freq)],
+            [-jnp.sin(freq), jnp.cos(freq)],
+        ]
+    )
     np.testing.assert_allclose(m.G, expected_f, atol=1e-6)
 
 
@@ -252,8 +249,7 @@ def test_cycle_filter_on_cyclic_data() -> None:
     period = 20.0
     t = jnp.arange(200, dtype=jnp.float32)
     true_cycle = 3.0 * jnp.cos(2.0 * jnp.pi * t / period)
-    obs = (true_cycle
-           + jax.random.normal(jax.random.PRNGKey(6), (200,)) * 1.0)
+    obs = true_cycle + jax.random.normal(jax.random.PRNGKey(6), (200,)) * 1.0
     obs = obs.reshape(-1, 1)
 
     model = Cycle(period=period, damping=1.0, sigma_cycle=1.0, sigma_obs=1.0)
@@ -315,9 +311,8 @@ def test_composed_model_filter_on_synthetic() -> None:
     noise = jax.random.normal(jax.random.PRNGKey(7), (120,)) * 2.0
     obs = (trend + seasonal + noise).reshape(-1, 1)
 
-    model = (
-        LocalLinearTrend(sigma_level=1.0, sigma_slope=0.1, sigma_obs=0.0)
-        + Seasonal(period=12, sigma_seasonal=1.0, sigma_obs=2.0)
+    model = LocalLinearTrend(sigma_level=1.0, sigma_slope=0.1, sigma_obs=0.0) + Seasonal(
+        period=12, sigma_seasonal=1.0, sigma_obs=2.0
     )
     result = kalman_filter(model, obs)
     assert jnp.all(jnp.isfinite(result.filtered_states))
@@ -327,20 +322,20 @@ def test_composed_model_filter_on_synthetic() -> None:
 def test_composed_model_smooth_on_synthetic() -> None:
     """Smoother works on composed models."""
     t = jnp.arange(60, dtype=jnp.float32)
-    obs = (t * 0.2
-           + 3.0 * jnp.sin(2.0 * jnp.pi * t / 12.0)
-           + jax.random.normal(jax.random.PRNGKey(8), (60,)) * 1.0)
+    obs = (
+        t * 0.2
+        + 3.0 * jnp.sin(2.0 * jnp.pi * t / 12.0)
+        + jax.random.normal(jax.random.PRNGKey(8), (60,)) * 1.0
+    )
     obs = obs.reshape(-1, 1)
 
-    model = (
-        LocalLinearTrend(sigma_level=0.5, sigma_slope=0.05, sigma_obs=0.0)
-        + Seasonal(period=12, sigma_seasonal=0.5, sigma_obs=1.0)
+    model = LocalLinearTrend(sigma_level=0.5, sigma_slope=0.05, sigma_obs=0.0) + Seasonal(
+        period=12, sigma_seasonal=0.5, sigma_obs=1.0
     )
     fr = kalman_filter(model, obs)
     sr = rts_smooth(model, fr)
     assert jnp.all(jnp.isfinite(sr.smoothed_states))
     # Smoothed variance should be <= filtered
     assert jnp.all(
-        jnp.diag(sr.smoothed_covariances[0])
-        <= jnp.diag(sr.filtered_covariances[0]) + 1e-5
+        jnp.diag(sr.smoothed_covariances[0]) <= jnp.diag(sr.filtered_covariances[0]) + 1e-5
     )

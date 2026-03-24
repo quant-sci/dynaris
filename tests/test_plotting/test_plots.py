@@ -83,9 +83,8 @@ def test_plot_smoothed(nile_fit: tuple) -> None:
 
 
 def test_plot_components() -> None:
-    model = (
-        LocalLinearTrend(sigma_level=1.0, sigma_slope=0.1, sigma_obs=0.0)
-        + Seasonal(period=12, sigma_seasonal=0.5, sigma_obs=2.0)
+    model = LocalLinearTrend(sigma_level=1.0, sigma_slope=0.1, sigma_obs=0.0) + Seasonal(
+        period=12, sigma_seasonal=0.5, sigma_obs=2.0
     )
     t = jnp.arange(60, dtype=jnp.float32)
     obs = (
@@ -97,11 +96,14 @@ def test_plot_components() -> None:
     fr = kalman_filter(model, obs)
     sr = rts_smooth(model, fr)
 
-    fig = plot_components(sr, {
-        "Level": 0,
-        "Slope": 1,
-        "Seasonal": 2,
-    })
+    fig = plot_components(
+        sr,
+        {
+            "Level": 0,
+            "Slope": 1,
+            "Seasonal": 2,
+        },
+    )
     assert fig is not None
     assert len(fig.axes) == 3
     plt.close(fig)
@@ -162,9 +164,8 @@ def test_plot_diagnostics_custom_lags(nile_fit: tuple) -> None:
 
 
 def test_plot_composed_model_forecast() -> None:
-    model = (
-        LocalLinearTrend(sigma_level=1.0, sigma_slope=0.1, sigma_obs=0.0)
-        + Seasonal(period=12, sigma_seasonal=0.5, sigma_obs=2.0)
+    model = LocalLinearTrend(sigma_level=1.0, sigma_slope=0.1, sigma_obs=0.0) + Seasonal(
+        period=12, sigma_seasonal=0.5, sigma_obs=2.0
     )
     t = jnp.arange(60, dtype=jnp.float32)
     obs = (

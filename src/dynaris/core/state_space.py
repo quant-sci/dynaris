@@ -109,25 +109,31 @@ class StateSpaceModel:
         """
         n1, n2 = self.state_dim, other.state_dim
 
-        system = jnp.block([
-            [self.G, jnp.zeros((n1, n2))],
-            [jnp.zeros((n2, n1)), other.G],
-        ])
+        system = jnp.block(
+            [
+                [self.G, jnp.zeros((n1, n2))],
+                [jnp.zeros((n2, n1)), other.G],
+            ]
+        )
         observation = jnp.concatenate([self.F, other.F], axis=-1)
-        evolution = jnp.block([
-            [self.W, jnp.zeros((n1, n2))],
-            [jnp.zeros((n2, n1)), other.W],
-        ])
+        evolution = jnp.block(
+            [
+                [self.W, jnp.zeros((n1, n2))],
+                [jnp.zeros((n2, n1)), other.W],
+            ]
+        )
         obs = self.V + other.V
 
         input_mat: Array | None = None
         if self.input_matrix is not None and other.input_matrix is not None:
             p1 = self.input_matrix.shape[-1]
             p2 = other.input_matrix.shape[-1]
-            input_mat = jnp.block([
-                [self.input_matrix, jnp.zeros((n1, p2))],
-                [jnp.zeros((n2, p1)), other.input_matrix],
-            ])
+            input_mat = jnp.block(
+                [
+                    [self.input_matrix, jnp.zeros((n1, p2))],
+                    [jnp.zeros((n2, p1)), other.input_matrix],
+                ]
+            )
         elif self.input_matrix is not None:
             input_mat = jnp.concatenate(
                 [
@@ -155,14 +161,9 @@ class StateSpaceModel:
 
     def __repr__(self) -> str:
         b_info = (
-            f", input_dim={self.input_matrix.shape[-1]}"
-            if self.input_matrix is not None
-            else ""
+            f", input_dim={self.input_matrix.shape[-1]}" if self.input_matrix is not None else ""
         )
-        return (
-            f"StateSpaceModel(state_dim={self.state_dim}, "
-            f"obs_dim={self.obs_dim}{b_info})"
-        )
+        return f"StateSpaceModel(state_dim={self.state_dim}, obs_dim={self.obs_dim}{b_info})"
 
     # --- JAX pytree registration ---
 
@@ -180,9 +181,7 @@ class StateSpaceModel:
         return leaves, {"has_input": has_input}
 
     @classmethod
-    def tree_unflatten(
-        cls, aux_data: dict[str, bool], children: list[Array]
-    ) -> StateSpaceModel:
+    def tree_unflatten(cls, aux_data: dict[str, bool], children: list[Array]) -> StateSpaceModel:
         """Reconstruct from JAX pytree leaves."""
         if aux_data["has_input"]:
             return cls(

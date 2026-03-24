@@ -253,9 +253,8 @@ def test_plot_invalid_kind() -> None:
 def test_composed_model_full_workflow() -> None:
     import matplotlib.pyplot as plt
 
-    model = (
-        LocalLinearTrend(sigma_level=1.0, sigma_slope=0.1, sigma_obs=0.0)
-        + Seasonal(period=12, sigma_seasonal=0.5, sigma_obs=2.0)
+    model = LocalLinearTrend(sigma_level=1.0, sigma_slope=0.1, sigma_obs=0.0) + Seasonal(
+        period=12, sigma_seasonal=0.5, sigma_obs=2.0
     )
     t = jnp.arange(60, dtype=jnp.float32)
     y = (

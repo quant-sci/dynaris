@@ -7,9 +7,7 @@ from jax import tree_util
 from dynaris.core.state_space import StateSpaceModel
 
 
-def _make_ssm(
-    state_dim: int = 2, obs_dim: int = 1, with_input: bool = False
-) -> StateSpaceModel:
+def _make_ssm(state_dim: int = 2, obs_dim: int = 1, with_input: bool = False) -> StateSpaceModel:
     kwargs: dict = dict(
         system_matrix=jnp.eye(state_dim),
         observation_matrix=jnp.ones((obs_dim, state_dim)),

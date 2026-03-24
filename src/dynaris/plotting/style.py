@@ -11,14 +11,14 @@ from matplotlib.figure import Figure
 
 # Grays for lines/points, blues for confidence intervals
 COLORS = {
-    "primary": "#F0F0F0",     # light gray
-    "secondary": "#4D4D4D",   # dark gray (main line)
-    "tertiary": "#808080",    # mid gray
-    "dark": "#2B2B2B",        # near-black
-    "darkest": "#1A1A1A",     # darkest gray
-    "observed": "#999999",    # neutral gray for data points
-    "ci_fill": "#4A90C4",     # blue confidence band
-    "ci_fill_alt": "#2166AC", # deeper blue alternate band
+    "primary": "#F0F0F0",  # light gray
+    "secondary": "#4D4D4D",  # dark gray (main line)
+    "tertiary": "#808080",  # mid gray
+    "dark": "#2B2B2B",  # near-black
+    "darkest": "#1A1A1A",  # darkest gray
+    "observed": "#999999",  # neutral gray for data points
+    "ci_fill": "#4A90C4",  # blue confidence band
+    "ci_fill_alt": "#2166AC",  # deeper blue alternate band
 }
 
 CMAP = "Greys"

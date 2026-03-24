@@ -30,15 +30,13 @@ def standardized_residuals(
 
     # Forecast variance: Q_t = F' @ R_t @ F + V
     # Shape: (T, m, m)
-    innovation_covs = jnp.einsum(
-        "ij,tjk,lk->til", model.F, pred_covs, model.F
-    ) + model.V[None, :, :]
+    innovation_covs = (
+        jnp.einsum("ij,tjk,lk->til", model.F, pred_covs, model.F) + model.V[None, :, :]
+    )
 
     # For univariate case, standardize directly
     # For multivariate, use diagonal elements
-    std_devs = jnp.sqrt(
-        jnp.diagonal(innovation_covs, axis1=-2, axis2=-1)
-    )  # (T, m)
+    std_devs = jnp.sqrt(jnp.diagonal(innovation_covs, axis1=-2, axis2=-1))  # (T, m)
 
     std_resids = innovations / std_devs
 
@@ -124,9 +122,7 @@ def pacf(x: Array, n_lags: int = 20) -> Array:
     return jnp.array(result)
 
 
-def ljung_box(
-    residuals: Array, n_lags: int = 10
-) -> tuple[float, float]:
+def ljung_box(residuals: Array, n_lags: int = 10) -> tuple[float, float]:
     """Ljung-Box test for autocorrelation in residuals.
 
     Tests H0: the residuals are independently distributed (no autocorrelation).

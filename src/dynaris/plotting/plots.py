@@ -41,9 +41,7 @@ def plot_filtered(
         The matplotlib Figure.
     """
     obs = np.asarray(filter_result.observations[:, component])
-    fitted = np.asarray(
-        filter_result.filtered_states @ model.F.T
-    )[:, component]
+    fitted = np.asarray(filter_result.filtered_states @ model.F.T)[:, component]
     lower, upper = confidence_bands(
         filter_result.filtered_states @ model.F.T,
         jnp.einsum("ij,tjk,lk->til", model.F, filter_result.filtered_covariances, model.F)
@@ -97,14 +95,10 @@ def plot_smoothed(
         The matplotlib Figure.
     """
     obs = np.asarray(smoother_result.observations[:, component])
-    smoothed = np.asarray(
-        smoother_result.smoothed_states @ model.F.T
-    )[:, component]
+    smoothed = np.asarray(smoother_result.smoothed_states @ model.F.T)[:, component]
     lower, upper = confidence_bands(
         smoother_result.smoothed_states @ model.F.T,
-        jnp.einsum(
-            "ij,tjk,lk->til", model.F, smoother_result.smoothed_covariances, model.F
-        )
+        jnp.einsum("ij,tjk,lk->til", model.F, smoother_result.smoothed_covariances, model.F)
         + model.V[None, :, :],
         level=level,
     )
@@ -168,9 +162,7 @@ def plot_components(
 
         states = np.asarray(smoother_result.smoothed_states[:, idx])
         variances = np.asarray(smoother_result.smoothed_covariances[:, idx, idx])
-        lower, upper = confidence_bands(
-            jnp.array(states), jnp.array(variances), level=level
-        )
+        lower, upper = confidence_bands(jnp.array(states), jnp.array(variances), level=level)
         lower = np.asarray(lower)
         upper = np.asarray(upper)
         t = np.arange(len(states))
@@ -263,7 +255,11 @@ def plot_forecast(
         frac = 0.25 + 0.5 * (i / max(n_levels - 1, 1))
         color = cmap(frac)
         ax.fill_between(
-            t_fc, lower, upper, alpha=0.20, color=color,
+            t_fc,
+            lower,
+            upper,
+            alpha=0.20,
+            color=color,
             label=f"{int(lev * 100)}% CI",
         )
 
@@ -321,8 +317,15 @@ def plot_diagnostics(
 
     # --- 2. Histogram ---
     ax = axes[0, 1]
-    ax.hist(resids, bins=25, density=True, color=COLORS["secondary"], alpha=0.6, edgecolor="white",
-            linewidth=0.3)
+    ax.hist(
+        resids,
+        bins=25,
+        density=True,
+        color=COLORS["secondary"],
+        alpha=0.6,
+        edgecolor="white",
+        linewidth=0.3,
+    )
     x_grid = np.linspace(float(resids.min()) - 0.5, float(resids.max()) + 0.5, 200)
     ax.plot(x_grid, stats.norm.pdf(x_grid), linewidth=1.0, color=COLORS["tertiary"])
     ax.set_xlabel("Value", fontsize=7)
@@ -335,8 +338,10 @@ def plot_diagnostics(
     n = len(sorted_resids)
     theoretical_q = stats.norm.ppf((np.arange(1, n + 1) - 0.5) / n)
     ax.scatter(theoretical_q, sorted_resids, s=6, color=COLORS["secondary"], alpha=0.7)
-    lims = [min(theoretical_q.min(), sorted_resids.min()),
-            max(theoretical_q.max(), sorted_resids.max())]
+    lims = [
+        min(theoretical_q.min(), sorted_resids.min()),
+        max(theoretical_q.max(), sorted_resids.max()),
+    ]
     ax.plot(lims, lims, linewidth=0.8, color=COLORS["tertiary"], linestyle="--")
     ax.set_xlabel("Theoretical quantiles", fontsize=7)
     ax.set_ylabel("Sample quantiles", fontsize=7)
@@ -419,9 +424,7 @@ def plot_panel(
 
     # --- [0, 0] Filtered ---
     ax = axes[0, 0]
-    fitted = np.asarray(
-        filter_result.filtered_states @ model.F.T
-    )[:, component]
+    fitted = np.asarray(filter_result.filtered_states @ model.F.T)[:, component]
     lower_f, upper_f = confidence_bands(
         filter_result.filtered_states @ model.F.T,
         jnp.einsum("ij,tjk,lk->til", model.F, filter_result.filtered_covariances, model.F)
@@ -440,14 +443,10 @@ def plot_panel(
     # --- [0, 1] Smoothed ---
     ax = axes[0, 1]
     if smoother_result is not None:
-        smoothed = np.asarray(
-            smoother_result.smoothed_states @ model.F.T
-        )[:, component]
+        smoothed = np.asarray(smoother_result.smoothed_states @ model.F.T)[:, component]
         lower_s, upper_s = confidence_bands(
             smoother_result.smoothed_states @ model.F.T,
-            jnp.einsum(
-                "ij,tjk,lk->til", model.F, smoother_result.smoothed_covariances, model.F
-            )
+            jnp.einsum("ij,tjk,lk->til", model.F, smoother_result.smoothed_covariances, model.F)
             + model.V[None, :, :],
             level=level,
         )
@@ -493,8 +492,12 @@ def plot_panel(
             )
             frac = 0.25 + 0.5 * (i / max(n_levels - 1, 1))
             ax.fill_between(
-                t_fc, np.asarray(lo), np.asarray(hi),
-                alpha=0.20, color=cmap(frac), label=f"{int(lev * 100)}%",
+                t_fc,
+                np.asarray(lo),
+                np.asarray(hi),
+                alpha=0.20,
+                color=cmap(frac),
+                label=f"{int(lev * 100)}%",
             )
         ax.axvline(n_obs - 0.5, color="#AAAAAA", linewidth=0.4, linestyle="--", zorder=1)
         ax.set_title("Forecast", fontsize=8, fontweight="medium")
@@ -521,8 +524,10 @@ def plot_panel(
     n = len(sorted_resids)
     theoretical_q = stats.norm.ppf((np.arange(1, n + 1) - 0.5) / n)
     ax.scatter(theoretical_q, sorted_resids, s=4, color=COLORS["secondary"], alpha=0.6)
-    lims = [min(theoretical_q.min(), sorted_resids.min()),
-            max(theoretical_q.max(), sorted_resids.max())]
+    lims = [
+        min(theoretical_q.min(), sorted_resids.min()),
+        max(theoretical_q.max(), sorted_resids.max()),
+    ]
     ax.plot(lims, lims, linewidth=0.7, color=COLORS["ci_fill_alt"], linestyle="--")
     ax.set_xlabel("Theoretical", fontsize=7)
     ax.set_ylabel("Sample", fontsize=7)
