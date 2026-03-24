@@ -12,7 +12,7 @@ from dynaris.core.state_space import StateSpaceModel
 from dynaris.estimation.diagnostics import acf as compute_acf
 from dynaris.estimation.diagnostics import standardized_residuals
 from dynaris.forecast.forecast import ForecastResult, confidence_bands
-from dynaris.plotting.style import CMAP, COLORS, create_figure
+from dynaris.plotting.style import COLORS, apply_style, create_figure
 
 # ---------------------------------------------------------------------------
 # Filtered vs observed
@@ -358,4 +358,190 @@ def plot_diagnostics(
 
     fig.suptitle(title, fontsize=10, fontweight="medium")
     fig.tight_layout()
+    return fig
+
+
+# ---------------------------------------------------------------------------
+# Panel — combined overview
+# ---------------------------------------------------------------------------
+
+
+def plot_panel(
+    filter_result: FilterResult,
+    smoother_result: SmootherResult | None,
+    forecast_result: ForecastResult | None,
+    model: StateSpaceModel,
+    component: int = 0,
+    level: float = 0.95,
+    forecast_levels: tuple[float, ...] = (0.50, 0.80, 0.95),
+    n_history: int | None = None,
+    n_lags: int = 20,
+    title: str = "",
+) -> Figure:
+    """Unified panel with filtered, smoothed, forecast, and diagnostics.
+
+    Layout (2 rows x 3 cols):
+
+    - [0, 0] Filtered vs observed
+    - [0, 1] Smoothed vs observed
+    - [0, 2] Forecast fan chart
+    - [1, 0] Standardized residuals
+    - [1, 1] Q-Q plot
+    - [1, 2] ACF
+
+    Args:
+        filter_result: Output of a Kalman filter pass.
+        smoother_result: Output of an RTS smoother (optional).
+        forecast_result: Output of a forecast (optional).
+        model: The state-space model.
+        component: Which observation dimension to plot.
+        level: Confidence level for filtered/smoothed bands.
+        forecast_levels: Confidence levels for forecast fan chart.
+        n_history: Historical points to show in forecast panel.
+        n_lags: Number of lags for ACF.
+        title: Overall figure title.
+
+    Returns:
+        The matplotlib Figure.
+    """
+    import matplotlib
+    import matplotlib.pyplot as plt
+    from scipy import stats
+
+    fig, axes = plt.subplots(2, 3, figsize=(13, 6.5))
+    fig.set_facecolor("white")
+    for ax in axes.flat:
+        apply_style(ax)
+
+    obs = np.asarray(filter_result.observations[:, component])
+    t = np.arange(len(obs))
+    n_obs = len(obs)
+
+    # --- [0, 0] Filtered ---
+    ax = axes[0, 0]
+    fitted = np.asarray(
+        filter_result.filtered_states @ model.F.T
+    )[:, component]
+    lower_f, upper_f = confidence_bands(
+        filter_result.filtered_states @ model.F.T,
+        jnp.einsum("ij,tjk,lk->til", model.F, filter_result.filtered_covariances, model.F)
+        + model.V[None, :, :],
+        level=level,
+    )
+    lower_f = np.asarray(lower_f)[:, component]
+    upper_f = np.asarray(upper_f)[:, component]
+
+    ax.scatter(t, obs, s=4, color=COLORS["observed"], alpha=0.5, zorder=2)
+    ax.plot(t, fitted, linewidth=1.0, color=COLORS["secondary"], zorder=3, label="Filtered")
+    ax.fill_between(t, lower_f, upper_f, alpha=0.15, color=COLORS["ci_fill"], zorder=1)
+    ax.set_title("Filtered", fontsize=8, fontweight="medium")
+    ax.legend(fontsize=6, frameon=False)
+
+    # --- [0, 1] Smoothed ---
+    ax = axes[0, 1]
+    if smoother_result is not None:
+        smoothed = np.asarray(
+            smoother_result.smoothed_states @ model.F.T
+        )[:, component]
+        lower_s, upper_s = confidence_bands(
+            smoother_result.smoothed_states @ model.F.T,
+            jnp.einsum(
+                "ij,tjk,lk->til", model.F, smoother_result.smoothed_covariances, model.F
+            )
+            + model.V[None, :, :],
+            level=level,
+        )
+        lower_s = np.asarray(lower_s)[:, component]
+        upper_s = np.asarray(upper_s)[:, component]
+        ax.scatter(t, obs, s=4, color=COLORS["observed"], alpha=0.5, zorder=2)
+        ax.plot(t, smoothed, linewidth=1.0, color=COLORS["secondary"], zorder=3, label="Smoothed")
+        ax.fill_between(t, lower_s, upper_s, alpha=0.15, color=COLORS["ci_fill_alt"], zorder=1)
+        ax.set_title("Smoothed", fontsize=8, fontweight="medium")
+        ax.legend(fontsize=6, frameon=False)
+    else:
+        ax.scatter(t, obs, s=4, color=COLORS["observed"], alpha=0.5, zorder=2)
+        ax.plot(t, fitted, linewidth=1.0, color=COLORS["secondary"], zorder=3)
+        ax.set_title("Filtered (no smoother)", fontsize=8, fontweight="medium")
+
+    # --- [0, 2] Forecast ---
+    ax = axes[0, 2]
+    if forecast_result is not None:
+        fc_mean = np.asarray(forecast_result.mean[:, component])
+        n_fc = len(fc_mean)
+        t_fc = np.arange(n_obs, n_obs + n_fc)
+
+        hist_obs = obs
+        hist_t = t
+        hist_fit = fitted
+        if n_history is not None:
+            hist_obs = obs[-n_history:]
+            hist_t = t[-n_history:]
+            hist_fit = fitted[-n_history:]
+
+        ax.scatter(hist_t, hist_obs, s=4, color=COLORS["observed"], alpha=0.5, zorder=2)
+        ax.plot(hist_t, hist_fit, linewidth=0.8, color=COLORS["secondary"], alpha=0.6, zorder=3)
+        ax.plot(t_fc, fc_mean, linewidth=1.0, color=COLORS["secondary"], zorder=4, label="Forecast")
+
+        cmap = matplotlib.colormaps["Blues"]
+        sorted_levels = sorted(forecast_levels, reverse=True)
+        n_levels = len(sorted_levels)
+        for i, lev in enumerate(sorted_levels):
+            lo, hi = confidence_bands(
+                forecast_result.mean[:, component],
+                forecast_result.covariance[:, component, component],
+                level=lev,
+            )
+            frac = 0.25 + 0.5 * (i / max(n_levels - 1, 1))
+            ax.fill_between(
+                t_fc, np.asarray(lo), np.asarray(hi),
+                alpha=0.20, color=cmap(frac), label=f"{int(lev * 100)}%",
+            )
+        ax.axvline(n_obs - 0.5, color="#AAAAAA", linewidth=0.4, linestyle="--", zorder=1)
+        ax.set_title("Forecast", fontsize=8, fontweight="medium")
+        ax.legend(fontsize=6, frameon=False, ncol=2)
+    else:
+        ax.scatter(t, obs, s=4, color=COLORS["observed"], alpha=0.5)
+        ax.set_title("Forecast (none)", fontsize=8, fontweight="medium", color="#AAAAAA")
+
+    # --- [1, 0] Standardized residuals ---
+    ax = axes[1, 0]
+    resids = np.asarray(standardized_residuals(filter_result, model))
+    if resids.ndim > 1:
+        resids = resids[:, 0]
+    ax.scatter(t, resids, s=3, color=COLORS["secondary"], alpha=0.6)
+    ax.axhline(0, color="#888888", linewidth=0.4)
+    ax.axhline(2, color=COLORS["ci_fill_alt"], linewidth=0.4, linestyle="--", alpha=0.5)
+    ax.axhline(-2, color=COLORS["ci_fill_alt"], linewidth=0.4, linestyle="--", alpha=0.5)
+    ax.set_title("Residuals", fontsize=8, fontweight="medium")
+    ax.set_ylabel("Std. resid.", fontsize=7)
+
+    # --- [1, 1] QQ-plot ---
+    ax = axes[1, 1]
+    sorted_resids = np.sort(resids)
+    n = len(sorted_resids)
+    theoretical_q = stats.norm.ppf((np.arange(1, n + 1) - 0.5) / n)
+    ax.scatter(theoretical_q, sorted_resids, s=4, color=COLORS["secondary"], alpha=0.6)
+    lims = [min(theoretical_q.min(), sorted_resids.min()),
+            max(theoretical_q.max(), sorted_resids.max())]
+    ax.plot(lims, lims, linewidth=0.7, color=COLORS["ci_fill_alt"], linestyle="--")
+    ax.set_xlabel("Theoretical", fontsize=7)
+    ax.set_ylabel("Sample", fontsize=7)
+    ax.set_title("Q-Q plot", fontsize=8, fontweight="medium")
+
+    # --- [1, 2] ACF ---
+    ax = axes[1, 2]
+    acf_vals = np.asarray(compute_acf(jnp.array(resids), n_lags=n_lags))
+    lags = np.arange(len(acf_vals))
+    ax.bar(lags[1:], acf_vals[1:], width=0.6, color=COLORS["secondary"], alpha=0.6)
+    sig = 1.96 / np.sqrt(len(resids))
+    ax.axhline(sig, color=COLORS["ci_fill_alt"], linewidth=0.4, linestyle="--", alpha=0.6)
+    ax.axhline(-sig, color=COLORS["ci_fill_alt"], linewidth=0.4, linestyle="--", alpha=0.6)
+    ax.axhline(0, color="#888888", linewidth=0.3)
+    ax.set_xlabel("Lag", fontsize=7)
+    ax.set_ylabel("ACF", fontsize=7)
+    ax.set_title("Autocorrelation", fontsize=8, fontweight="medium")
+
+    if title:
+        fig.suptitle(title, fontsize=11, fontweight="medium", y=1.0)
+    fig.tight_layout(h_pad=1.8, w_pad=1.5)
     return fig

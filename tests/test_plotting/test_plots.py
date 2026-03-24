@@ -17,6 +17,7 @@ from dynaris.plotting.plots import (
     plot_diagnostics,
     plot_filtered,
     plot_forecast,
+    plot_panel,
     plot_smoothed,
 )
 from dynaris.smoothers.rts import rts_smooth
@@ -177,4 +178,26 @@ def test_plot_composed_model_forecast() -> None:
     fc = forecast_from_filter(model, fr, steps=24)
     fig = plot_forecast(fr, fc, model, n_history=24)
     assert fig is not None
+    plt.close(fig)
+
+
+# ===================================================================
+# plot_panel
+# ===================================================================
+
+
+def test_plot_panel(nile_fit: tuple) -> None:
+    model, fr, sr = nile_fit
+    fc = forecast_from_filter(model, fr, steps=10)
+    fig = plot_panel(fr, sr, fc, model, title="Panel test")
+    assert fig is not None
+    assert len(fig.axes) == 6
+    plt.close(fig)
+
+
+def test_plot_panel_no_smoother_no_forecast(nile_fit: tuple) -> None:
+    model, fr, _ = nile_fit
+    fig = plot_panel(fr, None, None, model)
+    assert fig is not None
+    assert len(fig.axes) == 6
     plt.close(fig)

@@ -245,7 +245,7 @@ class DLM:
 
         Args:
             kind: One of ``"filtered"``, ``"smoothed"``, ``"forecast"``,
-                ``"diagnostics"``, ``"components"``.
+                ``"diagnostics"``, ``"components"``, ``"panel"``.
             **kwargs: Passed to the underlying plot function.
 
         Returns:
@@ -256,6 +256,7 @@ class DLM:
             plot_diagnostics,
             plot_filtered,
             plot_forecast,
+            plot_panel,
             plot_smoothed,
         )
 
@@ -277,9 +278,18 @@ class DLM:
             if self._smoother_result is None:
                 self.smooth()
             return plot_components(self.smoother_result, **kwargs)
+        if kind == "panel":
+            return plot_panel(
+                self.filter_result,
+                self._smoother_result,
+                self._forecast_result,
+                self._model,
+                **kwargs,
+            )
         msg = (
             f"Unknown plot kind: {kind!r}. "
-            "Use 'filtered', 'smoothed', 'forecast', 'diagnostics', or 'components'."
+            "Use 'filtered', 'smoothed', 'forecast', 'diagnostics', "
+            "'components', or 'panel'."
         )
         raise ValueError(msg)
 

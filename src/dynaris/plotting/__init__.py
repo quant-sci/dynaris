@@ -5,6 +5,7 @@ from dynaris.plotting.plots import (
     plot_diagnostics,
     plot_filtered,
     plot_forecast,
+    plot_panel,
     plot_smoothed,
 )
 
@@ -13,5 +14,6 @@ __all__ = [
     "plot_diagnostics",
     "plot_filtered",
     "plot_forecast",
+    "plot_panel",
     "plot_smoothed",
 ]
