@@ -4,6 +4,7 @@
 
 [![PyPI](https://img.shields.io/pypi/v/dynaris)](https://pypi.org/project/dynaris/)
 [![GitHub](https://img.shields.io/github/license/quant-sci/dynaris)](https://github.com/quant-sci/dynaris/blob/main/LICENSE)
+[![Documentation Status](https://readthedocs.org/projects/dynaris/badge/?version=latest)](https://dynaris.readthedocs.io/en/latest/?badge=latest)
 
 **dynaris** is a JAX-powered Python library for Dynamic Linear Models -- from composable DLM components to Kalman filtering, smoothing, forecasting, and parameter estimation, all with automatic differentiation.
 
