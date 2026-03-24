@@ -9,6 +9,7 @@ from dynaris.core import (
     StateSpaceModel,
 )
 from dynaris.dlm import (
+    DLM,
     Autoregressive,
     Cycle,
     LocalLevel,
@@ -22,6 +23,7 @@ from dynaris.smoothers import RTSSmoother, rts_smooth
 __version__ = "0.1.0"
 
 __all__ = [
+    "DLM",
     "Autoregressive",
     "Cycle",
     "FilterProtocol",
