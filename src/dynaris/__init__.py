@@ -18,7 +18,14 @@ from dynaris.dlm import (
     Regression,
     Seasonal,
 )
-from dynaris.filters import ExtendedKalmanFilter, KalmanFilter, ekf_filter, kalman_filter
+from dynaris.filters import (
+    ExtendedKalmanFilter,
+    KalmanFilter,
+    UnscentedKalmanFilter,
+    ekf_filter,
+    kalman_filter,
+    ukf_filter,
+)
 from dynaris.smoothers import RTSSmoother, rts_smooth
 
 __version__ = "0.1.0"
@@ -41,8 +48,10 @@ __all__ = [
     "SmootherProtocol",
     "SmootherResult",
     "StateSpaceModel",
+    "UnscentedKalmanFilter",
     "__version__",
     "ekf_filter",
     "kalman_filter",
     "rts_smooth",
+    "ukf_filter",
 ]
