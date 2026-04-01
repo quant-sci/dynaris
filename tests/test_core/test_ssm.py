@@ -82,7 +82,7 @@ def test_ssm_ekf_with_linear_raises() -> None:
 
 
 def test_ssm_invalid_model_type_raises() -> None:
-    with pytest.raises(TypeError, match="must be a StateSpaceModel or NonlinearSSM"):
+    with pytest.raises(TypeError, match="must be a StateSpaceModel"):
         SSM("not a model")  # type: ignore[arg-type]
 
 

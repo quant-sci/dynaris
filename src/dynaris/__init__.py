@@ -5,10 +5,13 @@ from dynaris.core import (
     FilterProtocol,
     FilterResult,
     GaussianState,
+    MarkovSwitchingSSM,
     NonlinearSSM,
     SmootherProtocol,
     SmootherResult,
     StateSpaceModel,
+    SwitchingFilterResult,
+    SwitchingSmootherResult,
 )
 from dynaris.dlm import (
     DLM,
@@ -21,10 +24,12 @@ from dynaris.dlm import (
 )
 from dynaris.filters import (
     ExtendedKalmanFilter,
+    HamiltonFilter,
     KalmanFilter,
     ParticleFilter,
     UnscentedKalmanFilter,
     ekf_filter,
+    hamilton_filter,
     kalman_filter,
     particle_filter,
     ukf_filter,
@@ -35,7 +40,7 @@ from dynaris.models import (
     StochasticVolatility,
     transform_returns,
 )
-from dynaris.smoothers import RTSSmoother, rts_smooth
+from dynaris.smoothers import KimSmoother, RTSSmoother, kim_smooth, rts_smooth
 
 __version__ = "0.1.0"
 
@@ -49,10 +54,13 @@ __all__ = [
     "FilterProtocol",
     "FilterResult",
     "GaussianState",
+    "HamiltonFilter",
     "KalmanFilter",
+    "KimSmoother",
     "LocalLevel",
     "LocalLinearTrend",
     "LorenzAttractor",
+    "MarkovSwitchingSSM",
     "NonlinearSSM",
     "ParticleFilter",
     "RTSSmoother",
@@ -62,10 +70,14 @@ __all__ = [
     "SmootherResult",
     "StateSpaceModel",
     "StochasticVolatility",
+    "SwitchingFilterResult",
+    "SwitchingSmootherResult",
     "UnscentedKalmanFilter",
     "__version__",
     "ekf_filter",
+    "hamilton_filter",
     "kalman_filter",
+    "kim_smooth",
     "particle_filter",
     "rts_smooth",
     "transform_returns",

@@ -18,9 +18,11 @@ Complete reference for all public classes and functions in dynaris.
 +------------------+-------------------------------------------------------------+
 | :doc:`filters`   | Kalman, EKF, UKF, and Particle filters                     |
 +------------------+-------------------------------------------------------------+
+| :doc:`switching` | Markov-switching models, Hamilton filter, Kim smoother       |
++------------------+-------------------------------------------------------------+
 | :doc:`smoothers` | Rauch-Tung-Striebel backward smoother                       |
 +------------------+-------------------------------------------------------------+
-| :doc:`estimation` | MLE, EM algorithm, diagnostics, transforms                 |
+| :doc:`estimation` | MLE, EM algorithm, diagnostics, model selection             |
 +------------------+-------------------------------------------------------------+
 | :doc:`forecast`  | Multi-step forecasting and batch processing                 |
 +------------------+-------------------------------------------------------------+
@@ -39,6 +41,7 @@ Complete reference for all public classes and functions in dynaris.
    models
    core
    filters
+   switching
    smoothers
    estimation
    forecast

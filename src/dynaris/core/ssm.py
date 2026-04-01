@@ -28,17 +28,20 @@ import pandas as pd
 from jax import Array
 
 from dynaris.core.nonlinear import NonlinearSSM
-from dynaris.core.results import FilterResult
+from dynaris.core.results import FilterResult, SwitchingFilterResult
 from dynaris.core.state_space import StateSpaceModel
+from dynaris.core.switching import MarkovSwitchingSSM
 from dynaris.core.types import GaussianState
 from dynaris.filters.ekf import ekf_filter
+from dynaris.filters.hamilton import hamilton_filter
 from dynaris.filters.kalman import kalman_filter
 from dynaris.filters.particle import particle_filter
 from dynaris.filters.ukf import ukf_filter
 
-_VALID_FILTERS = {"auto", "kalman", "ekf", "ukf", "particle"}
+_VALID_FILTERS = {"auto", "kalman", "ekf", "ukf", "particle", "hamilton"}
 _LINEAR_FILTERS = {"kalman"}
 _NONLINEAR_FILTERS = {"ekf", "ukf", "particle"}
+_SWITCHING_FILTERS = {"hamilton"}
 
 
 def _to_jax_2d(y: Any) -> tuple[Array, pd.DatetimeIndex | None]:
@@ -92,14 +95,17 @@ class SSM:
 
     def __init__(
         self,
-        model: StateSpaceModel | NonlinearSSM,
+        model: StateSpaceModel | NonlinearSSM | MarkovSwitchingSSM,
         filter: str = "auto",
         *,
         key: Array | None = None,
         **filter_kwargs: Any,
     ) -> None:
-        if not isinstance(model, (StateSpaceModel, NonlinearSSM)):
-            msg = f"model must be a StateSpaceModel or NonlinearSSM, got {type(model).__name__}"
+        if not isinstance(model, (StateSpaceModel, NonlinearSSM, MarkovSwitchingSSM)):
+            msg = (
+                f"model must be a StateSpaceModel, NonlinearSSM, or "
+                f"MarkovSwitchingSSM, got {type(model).__name__}"
+            )
             raise TypeError(msg)
 
         if filter not in _VALID_FILTERS:
@@ -108,21 +114,33 @@ class SSM:
 
         # Resolve auto-selection
         is_linear = isinstance(model, StateSpaceModel)
-        filter_name = ("kalman" if is_linear else "ukf") if filter == "auto" else filter
+        is_switching = isinstance(model, MarkovSwitchingSSM)
+        if filter == "auto":
+            if is_switching:
+                filter_name = "hamilton"
+            elif is_linear:
+                filter_name = "kalman"
+            else:
+                filter_name = "ukf"
+        else:
+            filter_name = filter
 
         # Validate filter/model compatibility
         if filter_name in _LINEAR_FILTERS and not is_linear:
-            msg = f"Filter {filter_name!r} requires a StateSpaceModel, got NonlinearSSM."
+            msg = f"Filter {filter_name!r} requires a StateSpaceModel."
             raise ValueError(msg)
-        if filter_name in _NONLINEAR_FILTERS and is_linear:
-            msg = f"Filter {filter_name!r} requires a NonlinearSSM, got StateSpaceModel."
+        if filter_name in _NONLINEAR_FILTERS and (is_linear or is_switching):
+            msg = f"Filter {filter_name!r} requires a NonlinearSSM."
+            raise ValueError(msg)
+        if filter_name in _SWITCHING_FILTERS and not is_switching:
+            msg = f"Filter {filter_name!r} requires a MarkovSwitchingSSM."
             raise ValueError(msg)
 
         self._model = model
         self._filter_name = filter_name
         self._filter_kwargs = filter_kwargs
         self._key = key
-        self._filter_result: FilterResult | None = None
+        self._filter_result: FilterResult | SwitchingFilterResult | None = None
         self._observations: Array | None = None
         self._index: pd.DatetimeIndex | None = None
         self._is_fitted = False
@@ -130,7 +148,7 @@ class SSM:
     # --- Properties ---
 
     @property
-    def model(self) -> StateSpaceModel | NonlinearSSM:
+    def model(self) -> StateSpaceModel | NonlinearSSM | MarkovSwitchingSSM:
         """The underlying state-space model."""
         return self._model
 
@@ -140,7 +158,7 @@ class SSM:
         return self._filter_name
 
     @property
-    def filter_result(self) -> FilterResult:
+    def filter_result(self) -> FilterResult | SwitchingFilterResult:
         """Filter result from the last ``fit()`` call."""
         if self._filter_result is None:
             msg = "Model not fitted. Call .fit() first."
@@ -189,6 +207,10 @@ class SSM:
                 key=key,
                 initial_state=initial_state,
                 **self._filter_kwargs,
+            )
+        elif self._filter_name == "hamilton":
+            self._filter_result = hamilton_filter(
+                self._model, obs, initial_state=initial_state
             )
 
         self._is_fitted = True

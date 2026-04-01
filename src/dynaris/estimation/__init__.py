@@ -3,6 +3,7 @@
 from dynaris.estimation.diagnostics import acf, ljung_box, pacf, standardized_residuals
 from dynaris.estimation.em import EMResult, fit_em
 from dynaris.estimation.mle import MLEResult, fit_mle
+from dynaris.estimation.model_selection import switching_aic, switching_bic
 from dynaris.estimation.transforms import inverse_softplus, softplus
 
 __all__ = [
@@ -16,4 +17,6 @@ __all__ = [
     "pacf",
     "softplus",
     "standardized_residuals",
+    "switching_aic",
+    "switching_bic",
 ]
