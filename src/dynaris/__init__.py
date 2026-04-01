@@ -21,9 +21,11 @@ from dynaris.dlm import (
 from dynaris.filters import (
     ExtendedKalmanFilter,
     KalmanFilter,
+    ParticleFilter,
     UnscentedKalmanFilter,
     ekf_filter,
     kalman_filter,
+    particle_filter,
     ukf_filter,
 )
 from dynaris.smoothers import RTSSmoother, rts_smooth
@@ -42,6 +44,7 @@ __all__ = [
     "LocalLevel",
     "LocalLinearTrend",
     "NonlinearSSM",
+    "ParticleFilter",
     "RTSSmoother",
     "Regression",
     "Seasonal",
@@ -52,6 +55,7 @@ __all__ = [
     "__version__",
     "ekf_filter",
     "kalman_filter",
+    "particle_filter",
     "rts_smooth",
     "ukf_filter",
 ]
