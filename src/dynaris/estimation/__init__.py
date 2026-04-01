@@ -7,6 +7,7 @@ from dynaris.estimation.diagnostics import acf, ljung_box, pacf, standardized_re
 from dynaris.estimation.em import EMResult, fit_em
 from dynaris.estimation.mle import MLEResult, fit_mle
 from dynaris.estimation.model_selection import switching_aic, switching_bic
+from dynaris.estimation.parallel_mcmc import fit_bayesian_parallel
 from dynaris.estimation.predictive import (
     posterior_predictive_check,
     posterior_predictive_forecast,
@@ -30,6 +31,7 @@ __all__ = [
     "compute_loo",
     "compute_waic",
     "fit_bayesian",
+    "fit_bayesian_parallel",
     "fit_dfm_em",
     "fit_em",
     "fit_mle",
