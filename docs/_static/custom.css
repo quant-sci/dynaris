@@ -1,7 +1,18 @@
-.sidebar-logo img {
-    max-width: 80px;
+.sidebar-github-link {
+    padding: 0.5rem var(--sidebar-item-spacing-horizontal);
 }
 
-.sidebar-brand-text {
-    display: none;
+.sidebar-github-link a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.85rem;
+    color: var(--color-sidebar-link-text--top-level);
+    text-decoration: none;
+    opacity: 0.7;
+    transition: opacity 0.15s;
+}
+
+.sidebar-github-link a:hover {
+    opacity: 1;
 }
