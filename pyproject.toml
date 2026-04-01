@@ -27,6 +27,12 @@ dependencies = [
     "scipy>=1.12",
 ]
 
+[project.optional-dependencies]
+bayesian = [
+    "numpyro>=0.15",
+    "arviz>=0.18",
+]
+
 [project.urls]
 Homepage = "https://github.com/quant-sci/dynaris"
 Repository = "https://github.com/quant-sci/dynaris"
@@ -88,6 +94,8 @@ module = [
     "pandas",
     "pandas.*",
     "scipy.*",
+    "numpyro.*",
+    "arviz.*",
 ]
 ignore_missing_imports = true
 

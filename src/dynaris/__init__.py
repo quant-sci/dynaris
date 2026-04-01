@@ -22,6 +22,7 @@ from dynaris.dlm import (
     Regression,
     Seasonal,
 )
+from dynaris.estimation.bayesian import BayesianResult, fit_bayesian
 from dynaris.filters import (
     ExtendedKalmanFilter,
     HamiltonFilter,
@@ -48,6 +49,7 @@ __all__ = [
     "DLM",
     "SSM",
     "Autoregressive",
+    "BayesianResult",
     "BearingsTracking",
     "Cycle",
     "ExtendedKalmanFilter",
@@ -75,6 +77,7 @@ __all__ = [
     "UnscentedKalmanFilter",
     "__version__",
     "ekf_filter",
+    "fit_bayesian",
     "hamilton_filter",
     "kalman_filter",
     "kim_smooth",
