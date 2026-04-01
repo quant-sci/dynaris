@@ -1,57 +1,94 @@
-<h1 align="left">
-<img src="public/logo.png" width="100">
-</h1>
 
 [![PyPI](https://img.shields.io/pypi/v/dynaris)](https://pypi.org/project/dynaris/)
 [![GitHub](https://img.shields.io/github/license/quant-sci/dynaris)](https://github.com/quant-sci/dynaris/blob/main/LICENSE)
 [![Documentation Status](https://readthedocs.org/projects/dynaris/badge/?version=latest)](https://dynaris.readthedocs.io/en/latest/?badge=latest)
 
-**dynaris** is a JAX-powered Python library for Dynamic Linear Models -- from composable DLM components to Kalman filtering, smoothing, forecasting, and parameter estimation, all with automatic differentiation.
+**dynaris** is a JAX-powered Python library for state-space models -- from composable DLMs to nonlinear filters, switching systems, Bayesian estimation, and dynamic factor models, all with automatic differentiation and GPU acceleration.
 
 ## Installation
 
 ```bash
 pip install dynaris
-# or
-uv add dynaris
+
+# With Bayesian estimation support
+pip install dynaris[bayesian]
 ```
 
 ## Documentation
 
-Full documentation is available at [dynaris.readthedocs.io](https://dynaris.readthedocs.io).
+Full documentation at [dynaris.readthedocs.io](https://dynaris.readthedocs.io).
 
 ## Quickstart
 
+### DLM: Trend + Seasonality
+
 ```python
-from dynaris import LocalLevel, DLM
-from dynaris.datasets import load_nile
+from dynaris import LocalLinearTrend, Seasonal, DLM
+from dynaris.datasets import load_airline
 
-# Load data
-y = load_nile()
-
-# Build a local-level model and fit
-dlm = DLM(LocalLevel(sigma_level=38.0, sigma_obs=123.0))
-dlm.fit(y).smooth()
-
-# Forecast and plot
-fc = dlm.forecast(steps=10)
-print(dlm.summary())
+model = LocalLinearTrend() + Seasonal(period=12)
+dlm = DLM(model)
+dlm.fit(load_airline()).smooth()
+dlm.forecast(steps=24)
 dlm.plot(kind="panel")
+```
+
+### Nonlinear Filtering
+
+```python
+from dynaris import SSM, LorenzAttractor
+
+model = LorenzAttractor(dt=0.01, obs_noise=2.0)
+ssm = SSM(model, filter="ukf")  # auto-selects UKF for nonlinear models
+ssm.fit(observations)
+```
+
+### Regime Switching
+
+```python
+from dynaris import LocalLevel, MarkovSwitchingSSM
+from dynaris.filters import hamilton_filter
+from dynaris.smoothers import kim_smooth
+import jax.numpy as jnp
+
+switching = MarkovSwitchingSSM(
+    models=(LocalLevel(1, 5), LocalLevel(5, 20)),
+    transition_matrix=jnp.array([[0.95, 0.05], [0.10, 0.90]]),
+    initial_probs=jnp.array([0.5, 0.5]),
+)
+result = hamilton_filter(switching, observations)
+smoothed = kim_smooth(switching, result)
+```
+
+### Bayesian Estimation
+
+```python
+from dynaris import LocalLevel, fit_bayesian
+from dynaris.estimation.priors import inverse_gamma_log_prior
+
+def model_fn(params):
+    return LocalLevel(sigma_level=jnp.exp(params[0]), sigma_obs=jnp.exp(params[1]))
+
+result = fit_bayesian(model_fn, observations, jnp.zeros(2),
+                      log_prior_fn=inverse_gamma_log_prior(shape=2.0, scale=1.0))
+# result.samples -> (n_samples, n_params) posterior draws
+```
+
+### Dynamic Factor Models
+
+```python
+from dynaris.models import DFMModel
+
+dfm = DFMModel(n_factors=2)
+dfm.fit(panel_data)  # (T, m) multivariate panel
+print(dfm.loadings_df())
+print(dfm.factor_states_df())
+dfm.forecast(steps=12)
 ```
 
 ## Components
 
-Build models by combining components with `+`:
-
-```python
-from dynaris import LocalLinearTrend, Seasonal, Cycle
-
-model = (
-    LocalLinearTrend(sigma_level=1.0, sigma_slope=0.1)
-    + Seasonal(period=12, sigma_seasonal=0.5)
-    + Cycle(period=40, damping=0.95)
-)
-```
+Build DLMs by combining components with `+`:
 
 | Component | State dim | Description |
 |-----------|-----------|-------------|
@@ -62,22 +99,34 @@ model = (
 | `Autoregressive` | order | AR(p) in companion form |
 | `Cycle` | 2 | Damped stochastic sinusoid |
 
+## Filters & Smoothers
+
+| Algorithm | Model type | Use case |
+|-----------|-----------|----------|
+| Kalman filter | Linear | Exact inference for DLMs |
+| Extended KF (EKF) | Nonlinear | First-order linearization |
+| Unscented KF (UKF) | Nonlinear | Sigma-point propagation |
+| Particle filter (SMC) | Any | Non-Gaussian, multi-modal |
+| Hamilton filter | Switching | Markov regime models |
+| RTS smoother | Linear | Retrospective state estimation |
+| Kim smoother | Switching | Retrospective regime inference |
+
 ## Parameter Estimation
 
-```python
-import jax.numpy as jnp
-from dynaris import LocalLevel
-from dynaris.estimation import fit_mle
+| Method | Function | Description |
+|--------|----------|-------------|
+| MLE | `fit_mle()` | Gradient-based via `jax.grad` + scipy |
+| EM | `fit_em()` | Expectation-Maximization for variances |
+| Bayesian | `fit_bayesian()` | NUTS/HMC via NumPyro |
+| DFM-EM | `fit_dfm_em()` | EM with loading matrix updates |
 
-def model_fn(params):
-    return LocalLevel(
-        sigma_level=jnp.exp(params[0]),
-        sigma_obs=jnp.exp(params[1]),
-    )
+## Built-in Nonlinear Models
 
-result = fit_mle(model_fn, y, init_params=jnp.zeros(2))
-print(f"Log-likelihood: {result.log_likelihood:.2f}")
-```
+| Model | Description |
+|-------|-------------|
+| `StochasticVolatility` | AR(1) log-volatility (KSC linearization) |
+| `BearingsTracking` | 2D constant-velocity target, bearing observations |
+| `LorenzAttractor` | Chaotic 3D system (Euler discretization) |
 
 ## Datasets
 
@@ -89,6 +138,15 @@ print(f"Log-likelihood: {result.log_likelihood:.2f}")
 | Sunspot numbers | `load_sunspots()` | 288 | Annual | Astronomy |
 | Global temperature | `load_temperature()` | 144 | Annual | Climate |
 | US GDP growth | `load_gdp()` | 319 | Quarterly | Economics |
+
+## Performance
+
+All filters run inside `jax.lax.scan` with `@jax.jit` -- GPU/TPU acceleration is automatic. Additional features:
+
+- **Batch processing** via `jax.vmap` for parallel multi-series inference
+- **Memory-efficient** long series via `jax.checkpoint` (trade compute for memory)
+- **Parallel MCMC** chains via NumPyro's `chain_method="parallel"`
+- **Pure NumPy backend** for lightweight / no-GPU environments
 
 ## License
 

@@ -32,7 +32,6 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 html_theme = "furo"
 html_title = "dynaris"
-html_logo = "_static/logo.png"
 html_theme_options = {
     "source_repository": "https://github.com/quant-sci/dynaris",
     "source_branch": "main",
