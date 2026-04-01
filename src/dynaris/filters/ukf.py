@@ -79,14 +79,17 @@ def sigma_points(state: GaussianState, lam: Array) -> Array:
     """
     n = state.mean.shape[0]
     scaled_cov = (n + lam) * state.cov
-    L = jnp.linalg.cholesky(scaled_cov)  # (n, n)
+    chol = jnp.linalg.cholesky(scaled_cov)  # (n, n)
 
     # Build sigma points: [mean, mean + L_i, mean - L_i]
-    offsets = jnp.concatenate([
-        jnp.zeros((1, n)),
-        L,    # rows of L as positive offsets
-        -L,   # rows of L as negative offsets
-    ], axis=0)  # (2n+1, n)
+    offsets = jnp.concatenate(
+        [
+            jnp.zeros((1, n)),
+            chol,  # rows of L as positive offsets
+            -chol,  # rows of L as negative offsets
+        ],
+        axis=0,
+    )  # (2n+1, n)
 
     return state.mean[None, :] + offsets
 
@@ -162,29 +165,29 @@ def update(
     # Predicted observation mean
     y_pred = jnp.sum(weights.wm[:, None] * pts_obs, axis=0)  # (m,)
 
-    # Innovation covariance S = sum wc * (y_diff)(y_diff)' + R
+    # Innovation covariance s = sum wc * (y_diff)(y_diff)' + R
     y_diff = pts_obs - y_pred[None, :]  # (2n+1, m)
-    S = jnp.sum(weights.wc[:, None, None] * (y_diff[:, :, None] * y_diff[:, None, :]), axis=0)
-    S = S + model.R  # (m, m)
+    s = jnp.sum(weights.wc[:, None, None] * (y_diff[:, :, None] * y_diff[:, None, :]), axis=0)
+    s = s + model.R  # (m, m)
 
-    # Cross-covariance P_xy = sum wc * (x_diff)(y_diff)'
+    # Cross-covariance p_xy = sum wc * (x_diff)(y_diff)'
     x_diff = pts - predicted.mean[None, :]  # (2n+1, n)
-    P_xy = jnp.sum(weights.wc[:, None, None] * (x_diff[:, :, None] * y_diff[:, None, :]), axis=0)
+    p_xy = jnp.sum(weights.wc[:, None, None] * (x_diff[:, :, None] * y_diff[:, None, :]), axis=0)
     # (n, m)
 
-    # Kalman gain K = P_xy @ S^{-1}
-    K = jnp.linalg.solve(S.T, P_xy.T).T  # (n, m)
+    # Kalman gain k = p_xy @ s^{-1}
+    k_gain = jnp.linalg.solve(s.T, p_xy.T).T  # (n, m)
 
     # Innovation
     e = y - y_pred  # (m,)
 
-    filtered_mean = predicted.mean + K @ e
-    filtered_cov = predicted.cov - K @ S @ K.T
+    filtered_mean = predicted.mean + k_gain @ e
+    filtered_cov = predicted.cov - k_gain @ s @ k_gain.T
 
-    # Log-likelihood: log N(e; 0, S)
+    # Log-likelihood: log N(e; 0, s)
     m = observation.shape[-1]
-    log_det = jnp.linalg.slogdet(S)[1]
-    mahal = e @ jnp.linalg.solve(S, e)
+    log_det = jnp.linalg.slogdet(s)[1]
+    mahal = e @ jnp.linalg.solve(s, e)
     ll = -0.5 * (m * jnp.log(2.0 * jnp.pi) + log_det + mahal)
 
     # Handle missing observations
@@ -248,8 +251,12 @@ class UnscentedKalmanFilter:
     ) -> FilterResult:
         """Run full forward UKF via jax.lax.scan."""
         return _ukf_filter_impl(
-            model, observations, initial_state,
-            self.alpha, self.beta, self.kappa,
+            model,
+            observations,
+            initial_state,
+            self.alpha,
+            self.beta,
+            self.kappa,
         )
 
 
@@ -326,9 +333,7 @@ def _ukf_scan(
         log_likelihood=jnp.array(0.0),
     )
 
-    def _scan_step(
-        carry: _ScanCarry, obs: Array
-    ) -> tuple[_ScanCarry, _ScanOutput]:
+    def _scan_step(carry: _ScanCarry, obs: Array) -> tuple[_ScanCarry, _ScanOutput]:
         predicted = predict(carry.filtered, model, weights)
         filtered, ll = update(predicted, obs, model, weights)
         new_carry = _ScanCarry(

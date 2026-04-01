@@ -50,8 +50,8 @@ def predict(state: GaussianState, model: NonlinearSSM) -> GaussianState:
     R_t = F_t @ C_{t-1} @ F_t' + Q
     """
     mean = model.f(state.mean)
-    F_jac = jax.jacfwd(model.f)(state.mean)  # (n, n)
-    cov = F_jac @ state.cov @ F_jac.T + model.Q
+    f_jac = jax.jacfwd(model.f)(state.mean)  # (n, n)
+    cov = f_jac @ state.cov @ f_jac.T + model.Q
     return GaussianState(mean=mean, cov=cov)
 
 
@@ -70,22 +70,22 @@ def update(
     """
     y = observation
     y_pred = model.h(predicted.mean)  # (m,)
-    H_jac = jax.jacfwd(model.h)(predicted.mean)  # (m, n)
+    h_jac = jax.jacfwd(model.h)(predicted.mean)  # (m, n)
 
     e = y - y_pred  # innovation (m,)
-    S = H_jac @ predicted.cov @ H_jac.T + model.R  # innovation covariance (m, m)
+    s = h_jac @ predicted.cov @ h_jac.T + model.R  # innovation covariance (m, m)
 
     # Kalman gain: K = P @ H' @ S^{-1}
-    K = jnp.linalg.solve(S.T, (predicted.cov @ H_jac.T).T).T  # (n, m)
+    k_gain = jnp.linalg.solve(s.T, (predicted.cov @ h_jac.T).T).T  # (n, m)
 
-    filtered_mean = predicted.mean + K @ e
+    filtered_mean = predicted.mean + k_gain @ e
     identity = jnp.eye(predicted.mean.shape[-1])
-    filtered_cov = (identity - K @ H_jac) @ predicted.cov
+    filtered_cov = (identity - k_gain @ h_jac) @ predicted.cov
 
     # Log-likelihood: log N(e; 0, S)
     m = observation.shape[-1]
-    log_det = jnp.linalg.slogdet(S)[1]
-    mahal = e @ jnp.linalg.solve(S, e)
+    log_det = jnp.linalg.slogdet(s)[1]
+    mahal = e @ jnp.linalg.solve(s, e)
     ll = -0.5 * (m * jnp.log(2.0 * jnp.pi) + log_det + mahal)
 
     # Handle missing observations: if any element is NaN, skip update
@@ -181,9 +181,7 @@ def ekf_filter(
         log_likelihood=jnp.array(0.0),
     )
 
-    def _scan_step(
-        carry: _ScanCarry, obs: Array
-    ) -> tuple[_ScanCarry, _ScanOutput]:
+    def _scan_step(carry: _ScanCarry, obs: Array) -> tuple[_ScanCarry, _ScanOutput]:
         predicted = predict(carry.filtered, model)
         filtered, ll = update(predicted, obs, model)
         new_carry = _ScanCarry(

@@ -16,9 +16,9 @@ from dynaris.filters.kalman import kalman_filter
 from dynaris.filters.ukf import (
     UnscentedKalmanFilter,
     compute_weights,
+    predict,
     sigma_points,
     ukf_filter,
-    predict,
     update,
 )
 
@@ -30,9 +30,7 @@ NILE = load_nile_jax()
 # ---------------------------------------------------------------------------
 
 
-def _linear_nonlinear_model(
-    sigma_level: float = 1.0, sigma_obs: float = 1.0
-) -> NonlinearSSM:
+def _linear_nonlinear_model(sigma_level: float = 1.0, sigma_obs: float = 1.0) -> NonlinearSSM:
     """Local-level model as a NonlinearSSM."""
     return NonlinearSSM(
         transition_fn=lambda x: x,
@@ -96,9 +94,7 @@ def test_sigma_points_symmetric() -> None:
     w = compute_weights(n=1)
     pts = sigma_points(state, w.lam)
     # Points 1 and 2 should be equidistant from the mean
-    np.testing.assert_allclose(
-        pts[1] - state.mean, -(pts[2] - state.mean), atol=1e-6
-    )
+    np.testing.assert_allclose(pts[1] - state.mean, -(pts[2] - state.mean), atol=1e-6)
 
 
 def test_sigma_points_weighted_mean_recovers_mean() -> None:
@@ -202,9 +198,7 @@ def test_ukf_matches_kalman_on_linear_model() -> None:
     np.testing.assert_allclose(
         ukf_result.filtered_states[10:], kf_result.filtered_states[10:], atol=0.5
     )
-    np.testing.assert_allclose(
-        ukf_result.log_likelihood, kf_result.log_likelihood, atol=5.0
-    )
+    np.testing.assert_allclose(ukf_result.log_likelihood, kf_result.log_likelihood, atol=5.0)
 
 
 # ---------------------------------------------------------------------------
@@ -251,9 +245,7 @@ def test_ukf_filter_with_missing_obs() -> None:
     result = ukf_filter(model, observations)
     assert jnp.all(jnp.isfinite(result.filtered_states))
     assert jnp.isfinite(result.log_likelihood)
-    np.testing.assert_allclose(
-        result.filtered_states[10], result.predicted_states[10], atol=1e-5
-    )
+    np.testing.assert_allclose(result.filtered_states[10], result.predicted_states[10], atol=1e-5)
 
 
 # ---------------------------------------------------------------------------
@@ -366,13 +358,13 @@ def test_grad_through_ukf() -> None:
     observations = NILE[:20].reshape(-1, 1)
 
     def neg_ll(log_sigma_level: Array, log_sigma_obs: Array) -> Array:
-        Q = jnp.exp(log_sigma_level) * jnp.eye(1)
-        R = jnp.exp(log_sigma_obs) * jnp.eye(1)
+        q = jnp.exp(log_sigma_level) * jnp.eye(1)
+        r = jnp.exp(log_sigma_obs) * jnp.eye(1)
         model = NonlinearSSM(
             transition_fn=lambda x: x,
             observation_fn=lambda x: x,
-            transition_cov=Q,
-            observation_cov=R,
+            transition_cov=q,
+            observation_cov=r,
             state_dim=1,
             obs_dim=1,
         )

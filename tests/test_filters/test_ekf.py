@@ -23,12 +23,10 @@ NILE = load_nile_jax()
 # ---------------------------------------------------------------------------
 
 
-def _linear_nonlinear_model(
-    sigma_level: float = 1.0, sigma_obs: float = 1.0
-) -> NonlinearSSM:
+def _linear_nonlinear_model(sigma_level: float = 1.0, sigma_obs: float = 1.0) -> NonlinearSSM:
     """Local-level model as a NonlinearSSM (identity transition/observation)."""
-    Q = jnp.array([[sigma_level**2]])
-    R = jnp.array([[sigma_obs**2]])
+    q = jnp.array([[sigma_level**2]])
+    r = jnp.array([[sigma_obs**2]])
 
     def f(x: Array) -> Array:
         return x
@@ -39,8 +37,8 @@ def _linear_nonlinear_model(
     return NonlinearSSM(
         transition_fn=f,
         observation_fn=h,
-        transition_cov=Q,
-        observation_cov=R,
+        transition_cov=q,
+        observation_cov=r,
         state_dim=1,
         obs_dim=1,
     )
@@ -72,7 +70,7 @@ def test_predict_identity_transition() -> None:
 
 def test_predict_nonlinear_transition() -> None:
     """Test with a nonlinear transition: f(x) = x + 0.1 * sin(x)."""
-    Q = jnp.array([[0.5]])
+    q = jnp.array([[0.5]])
 
     def f(x: Array) -> Array:
         return x + 0.1 * jnp.sin(x)
@@ -80,7 +78,7 @@ def test_predict_nonlinear_transition() -> None:
     model = NonlinearSSM(
         transition_fn=f,
         observation_fn=lambda x: x,
-        transition_cov=Q,
+        transition_cov=q,
         observation_cov=jnp.array([[1.0]]),
         state_dim=1,
         obs_dim=1,
@@ -140,15 +138,11 @@ def test_ekf_matches_kalman_on_linear_model() -> None:
     ekf_result = ekf_filter(nl_model, observations, initial_state=init)
     kf_result = kalman_filter(lin_model, observations, initial_state=init)
 
-    np.testing.assert_allclose(
-        ekf_result.filtered_states, kf_result.filtered_states, atol=1e-4
-    )
+    np.testing.assert_allclose(ekf_result.filtered_states, kf_result.filtered_states, atol=1e-4)
     np.testing.assert_allclose(
         ekf_result.filtered_covariances, kf_result.filtered_covariances, atol=1e-3
     )
-    np.testing.assert_allclose(
-        ekf_result.log_likelihood, kf_result.log_likelihood, atol=1e-2
-    )
+    np.testing.assert_allclose(ekf_result.log_likelihood, kf_result.log_likelihood, atol=1e-2)
 
 
 # ---------------------------------------------------------------------------
@@ -198,9 +192,7 @@ def test_ekf_filter_with_missing_obs() -> None:
     assert jnp.isfinite(result.log_likelihood)
 
     # At NaN points, predicted == filtered
-    np.testing.assert_allclose(
-        result.filtered_states[10], result.predicted_states[10], atol=1e-5
-    )
+    np.testing.assert_allclose(result.filtered_states[10], result.predicted_states[10], atol=1e-5)
 
 
 # ---------------------------------------------------------------------------
@@ -280,7 +272,7 @@ def test_ekf_2d_nonlinear() -> None:
     # Simulate observations from a known trajectory
     true_state = jnp.array([3.0, 4.0])
     obs_list = []
-    for t in range(50):
+    for _t in range(50):
         true_state = f(true_state) + jax.random.normal(key, (2,)) * 0.01
         key, _ = jax.random.split(key)
         obs = h(true_state) + jax.random.normal(key, (2,)) * 0.1
@@ -315,13 +307,13 @@ def test_grad_through_ekf() -> None:
     observations = NILE[:20].reshape(-1, 1)
 
     def neg_ll(log_sigma_level: Array, log_sigma_obs: Array) -> Array:
-        Q = jnp.exp(log_sigma_level) * jnp.eye(1)
-        R = jnp.exp(log_sigma_obs) * jnp.eye(1)
+        q_mat = jnp.exp(log_sigma_level) * jnp.eye(1)
+        r_mat = jnp.exp(log_sigma_obs) * jnp.eye(1)
         model = NonlinearSSM(
             transition_fn=lambda x: x,
             observation_fn=lambda x: x,
-            transition_cov=Q,
-            observation_cov=R,
+            transition_cov=q_mat,
+            observation_cov=r_mat,
             state_dim=1,
             obs_dim=1,
         )
