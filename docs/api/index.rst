@@ -6,13 +6,17 @@ Complete reference for all public classes and functions in dynaris.
 +------------------+-------------------------------------------------------------+
 | Module           | Description                                                 |
 +==================+=============================================================+
+| :doc:`ssm`       | Unified ``SSM`` class with automatic filter selection       |
++------------------+-------------------------------------------------------------+
 | :doc:`dlm`       | High-level ``DLM`` class (fit, smooth, forecast, plot)      |
 +------------------+-------------------------------------------------------------+
 | :doc:`components` | Six composable building blocks (``LocalLevel``, etc.)      |
 +------------------+-------------------------------------------------------------+
+| :doc:`models`    | Built-in nonlinear models (stochastic vol, tracking, etc.)  |
++------------------+-------------------------------------------------------------+
 | :doc:`core`      | ``StateSpaceModel``, ``GaussianState``, result containers   |
 +------------------+-------------------------------------------------------------+
-| :doc:`filters`   | Kalman filter (predict, update, full forward pass)          |
+| :doc:`filters`   | Kalman, EKF, UKF, and Particle filters                     |
 +------------------+-------------------------------------------------------------+
 | :doc:`smoothers` | Rauch-Tung-Striebel backward smoother                       |
 +------------------+-------------------------------------------------------------+
@@ -29,8 +33,10 @@ Complete reference for all public classes and functions in dynaris.
    :maxdepth: 2
    :hidden:
 
+   ssm
    dlm
    components
+   models
    core
    filters
    smoothers
