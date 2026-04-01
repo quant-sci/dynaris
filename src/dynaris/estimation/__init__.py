@@ -2,6 +2,7 @@
 
 from dynaris.estimation.bayesian import BayesianResult, fit_bayesian
 from dynaris.estimation.comparison import compute_loo, compute_waic, to_arviz
+from dynaris.estimation.dfm import DFMResult, fit_dfm_em
 from dynaris.estimation.diagnostics import acf, ljung_box, pacf, standardized_residuals
 from dynaris.estimation.em import EMResult, fit_em
 from dynaris.estimation.mle import MLEResult, fit_mle
@@ -21,6 +22,7 @@ from dynaris.estimation.transforms import inverse_softplus, softplus
 
 __all__ = [
     "BayesianResult",
+    "DFMResult",
     "EMResult",
     "MLEResult",
     "acf",
@@ -28,6 +30,7 @@ __all__ = [
     "compute_loo",
     "compute_waic",
     "fit_bayesian",
+    "fit_dfm_em",
     "fit_em",
     "fit_mle",
     "half_normal_log_prior",

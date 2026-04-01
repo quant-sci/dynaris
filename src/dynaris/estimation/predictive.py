@@ -166,6 +166,9 @@ def posterior_predictive_check(
 def _simulate_from_model(model: StateSpaceModel, n_steps: int, key: Array) -> Array:
     """Simulate observations from a linear state-space model.
 
+    Uses the model's default initial state (diffuse prior) to draw the
+    starting state, ensuring simulations start at a reasonable scale.
+
     Args:
         model: Linear-Gaussian state-space model.
         n_steps: Number of time steps.

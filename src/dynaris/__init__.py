@@ -23,6 +23,7 @@ from dynaris.dlm import (
     Seasonal,
 )
 from dynaris.estimation.bayesian import BayesianResult, fit_bayesian
+from dynaris.estimation.dfm import DFMResult, fit_dfm_em
 from dynaris.filters import (
     ExtendedKalmanFilter,
     HamiltonFilter,
@@ -37,10 +38,12 @@ from dynaris.filters import (
 )
 from dynaris.models import (
     BearingsTracking,
+    DynamicFactorModel,
     LorenzAttractor,
     StochasticVolatility,
     transform_returns,
 )
+from dynaris.models.dfm_api import DFMModel
 from dynaris.smoothers import KimSmoother, RTSSmoother, kim_smooth, rts_smooth
 
 __version__ = "0.1.0"
@@ -52,6 +55,9 @@ __all__ = [
     "BayesianResult",
     "BearingsTracking",
     "Cycle",
+    "DFMModel",
+    "DFMResult",
+    "DynamicFactorModel",
     "ExtendedKalmanFilter",
     "FilterProtocol",
     "FilterResult",
@@ -78,6 +84,7 @@ __all__ = [
     "__version__",
     "ekf_filter",
     "fit_bayesian",
+    "fit_dfm_em",
     "hamilton_filter",
     "kalman_filter",
     "kim_smooth",

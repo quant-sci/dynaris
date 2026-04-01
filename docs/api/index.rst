@@ -14,6 +14,8 @@ Complete reference for all public classes and functions in dynaris.
 +------------------+-------------------------------------------------------------+
 | :doc:`models`    | Built-in nonlinear models (stochastic vol, tracking, etc.)  |
 +------------------+-------------------------------------------------------------+
+| :doc:`factor`    | Dynamic Factor Models (DFMModel, loadings, rotation)        |
++------------------+-------------------------------------------------------------+
 | :doc:`core`      | ``StateSpaceModel``, ``GaussianState``, result containers   |
 +------------------+-------------------------------------------------------------+
 | :doc:`filters`   | Kalman, EKF, UKF, and Particle filters                     |
@@ -39,6 +41,7 @@ Complete reference for all public classes and functions in dynaris.
    dlm
    components
    models
+   factor
    core
    filters
    switching
