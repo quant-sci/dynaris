@@ -28,6 +28,16 @@ Economics & Finance
    US quarterly GDP growth. Local level plus AR(2) to capture business
    cycle dynamics.
 
+**Stochastic Volatility** --- ``stochastic_volatility.py``
+   Particle filter on a stochastic volatility model for financial returns.
+   Compares EKF, UKF, and particle filter on latent log-volatility recovery
+   using the Kim-Shephard-Chib linearization.
+
+**Regime Switching** --- ``regime_switching.py``
+   Hamilton filter and Kim smoother detecting volatility regimes. Simulates
+   a 2-regime process (calm vs volatile) and tracks filtered and smoothed
+   regime probabilities over time.
+
 Natural Sciences
 ----------------
 
@@ -42,6 +52,41 @@ Natural Sciences
 **Global Temperature** --- ``global_temperature.py``
    Annual temperature anomaly (1880--2023). Linear trend detection in climate
    data.
+
+Nonlinear Filtering
+-------------------
+
+**Lorenz Attractor Tracking** --- ``lorenz_tracking.py``
+   Compares EKF, UKF, and particle filter on the chaotic Lorenz system.
+   Simulates a 3D trajectory with partial (2D) noisy observations and
+   tracks the full state. Plots per-component tracking accuracy.
+
+**Bearings-Only Tracking** --- ``bearings_tracking.py``
+   EKF on a 2D target tracking problem with nonlinear bearing-angle
+   observations. Demonstrates the classic radar/sonar tracking scenario
+   where the sensor measures only the angle to the target.
+
+Bayesian Estimation
+-------------------
+
+**Bayesian Airline Passengers** --- ``bayesian_nile.py``
+   Full Bayesian inference for a trend + seasonal model on log-transformed
+   airline data using NumPyro's NUTS sampler. Compares posterior with MLE,
+   generates posterior predictive forecasts with credible intervals, and
+   runs prior predictive checks.
+
+Dynamic Factor Models
+---------------------
+
+**Macroeconomic Nowcasting** --- ``macro_nowcasting.py``
+   Extracts 2 latent factors from a panel of 10 simulated macroeconomic
+   indicators via DFM-EM. Plots factor time series, loading matrix heatmap,
+   explained variance, and multivariate forecasts.
+
+**Multi-Sensor Fusion** --- ``sensor_fusion.py``
+   Fuses 5 noisy temperature sensors into a single optimal estimate using
+   a 1-factor DFM. Demonstrates how the DFM weights sensors by their
+   reliability (inverse noise variance).
 
 Advanced
 --------

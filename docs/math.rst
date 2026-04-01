@@ -338,6 +338,231 @@ The Expectation--Maximization algorithm alternates between:
 The EM algorithm guarantees non-decreasing log-likelihood at each iteration
 for the exact M-step.
 
+Nonlinear Filters
+-----------------
+
+When the state-space model is nonlinear, the Kalman filter no longer gives
+exact inference. Dynaris provides three approximate filters.
+
+Extended Kalman Filter (EKF)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The EKF linearizes the nonlinear functions at each time step via first-order
+Taylor expansion, then applies the standard Kalman recursion.
+
+Given the nonlinear state-space model:
+
+.. math::
+
+   \boldsymbol{\theta}_t &= f(\boldsymbol{\theta}_{t-1}) + \boldsymbol{\omega}_t, \quad \boldsymbol{\omega}_t \sim \mathcal{N}(\mathbf{0}, \mathbf{Q}) \\
+   Y_t &= h(\boldsymbol{\theta}_t) + \boldsymbol{\nu}_t, \quad \boldsymbol{\nu}_t \sim \mathcal{N}(\mathbf{0}, \mathbf{R})
+
+**Predict:**
+
+.. math::
+
+   \mathbf{a}_t &= f(\mathbf{m}_{t-1}) \\
+   \mathbf{F}_t &= \left.\frac{\partial f}{\partial \boldsymbol{\theta}}\right|_{\mathbf{m}_{t-1}} \qquad \text{(Jacobian via } \texttt{jax.jacfwd}\text{)} \\
+   \mathbf{R}_t &= \mathbf{F}_t\,\mathbf{C}_{t-1}\,\mathbf{F}_t^\prime + \mathbf{Q}
+
+**Update:**
+
+.. math::
+
+   \hat{Y}_t &= h(\mathbf{a}_t) \\
+   \mathbf{H}_t &= \left.\frac{\partial h}{\partial \boldsymbol{\theta}}\right|_{\mathbf{a}_t} \\
+   \mathbf{S}_t &= \mathbf{H}_t\,\mathbf{R}_t\,\mathbf{H}_t^\prime + \mathbf{R} \\
+   \mathbf{K}_t &= \mathbf{R}_t\,\mathbf{H}_t^\prime\,\mathbf{S}_t^{-1} \\
+   \mathbf{m}_t &= \mathbf{a}_t + \mathbf{K}_t\,(Y_t - \hat{Y}_t) \\
+   \mathbf{C}_t &= (\mathbf{I} - \mathbf{K}_t\,\mathbf{H}_t)\,\mathbf{R}_t
+
+In dynaris, the Jacobians are computed automatically via ``jax.jacfwd`` ---
+no manual derivation required.
+
+Unscented Kalman Filter (UKF)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The UKF avoids linearization by propagating deterministically chosen
+**sigma points** through the nonlinear functions, then recovering the
+mean and covariance from the transformed points.
+
+**Sigma points** for a state with mean :math:`\mathbf{m}` and covariance
+:math:`\mathbf{C}` of dimension :math:`n`:
+
+.. math::
+
+   \boldsymbol{\chi}_0 &= \mathbf{m} \\
+   \boldsymbol{\chi}_i &= \mathbf{m} + \left[\sqrt{(n + \lambda)\,\mathbf{C}}\right]_i, \quad i = 1, \ldots, n \\
+   \boldsymbol{\chi}_{n+i} &= \mathbf{m} - \left[\sqrt{(n + \lambda)\,\mathbf{C}}\right]_i, \quad i = 1, \ldots, n
+
+where :math:`\lambda = \alpha^2(n + \kappa) - n` and
+:math:`[\sqrt{\mathbf{M}}]_i` is the :math:`i`-th row of the Cholesky
+factor of :math:`\mathbf{M}`.
+
+**Weights:**
+
+.. math::
+
+   w_0^{(m)} &= \frac{\lambda}{n + \lambda}, \quad w_0^{(c)} = w_0^{(m)} + 1 - \alpha^2 + \beta \\
+   w_i^{(m)} &= w_i^{(c)} = \frac{1}{2(n + \lambda)}, \quad i = 1, \ldots, 2n
+
+**Predict:** Propagate sigma points through :math:`f`, recover predicted
+mean and covariance from the weighted transformed points.
+
+**Update:** Propagate sigma points through :math:`h`, compute cross-covariance,
+and apply the Kalman gain.
+
+The UKF captures second-order nonlinear effects that the EKF misses, and
+requires no Jacobian computation.
+
+Particle Filter (Sequential Monte Carlo)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The particle filter represents the filtering distribution as a weighted set
+of :math:`N` **particles** (samples), enabling inference in arbitrarily
+nonlinear and non-Gaussian models.
+
+**Algorithm** (bootstrap particle filter):
+
+1. **Resample:** Draw ancestor indices from the categorical distribution
+   defined by the current weights.
+
+2. **Propagate:** For each particle :math:`i`:
+
+   .. math::
+
+      \boldsymbol{\theta}_t^{(i)} = f\!\left(\boldsymbol{\theta}_{t-1}^{(i)}\right) + \boldsymbol{\omega}_t^{(i)}, \quad \boldsymbol{\omega}_t^{(i)} \sim \mathcal{N}(\mathbf{0}, \mathbf{Q})
+
+   Implemented via ``jax.vmap`` for vectorized propagation.
+
+3. **Reweight:** Compute unnormalized weights from the observation likelihood:
+
+   .. math::
+
+      \tilde{w}_t^{(i)} = p\!\left(Y_t \mid \boldsymbol{\theta}_t^{(i)}\right)
+
+   Normalize: :math:`w_t^{(i)} = \tilde{w}_t^{(i)} / \sum_j \tilde{w}_t^{(j)}`.
+
+4. **Estimate:** The filtered mean and covariance are weighted statistics
+   of the particle cloud.
+
+**Resampling strategies:** Multinomial, systematic (default), and stratified.
+The **effective sample size** :math:`\text{ESS} = 1 / \sum_i (w_t^{(i)})^2`
+monitors particle degeneracy.
+
+**Log-likelihood:** :math:`\log \hat{p}(Y_t \mid Y_{1:t-1}) = \log\!\left(\frac{1}{N}\sum_i \tilde{w}_t^{(i)}\right)`.
+
+Markov-Switching Models
+-----------------------
+
+Hamilton Filter
+~~~~~~~~~~~~~~~
+
+The Hamilton filter extends the Kalman filter to models with :math:`K`
+discrete regimes governed by a Markov chain with transition matrix
+:math:`\mathbf{P}`, where :math:`P_{ij} = \Pr(S_t = j \mid S_{t-1} = i)`.
+
+At each time step, the filter maintains :math:`K` Gaussian state beliefs
+(one per regime) and a vector of regime probabilities.
+
+**Algorithm** (with Kim's collapse approximation):
+
+1. **Collapse:** For each target regime :math:`j`, compute the
+   probability-weighted mixture of the :math:`K` source-regime states:
+
+   .. math::
+
+      w_{i|j} &= \frac{P_{ij}\,\pi_{t-1}^{(i)}}{\sum_k P_{kj}\,\pi_{t-1}^{(k)}} \\
+      \mathbf{m}_{t|t-1}^{(j)} &= \sum_i w_{i|j}\,\mathbf{m}_{t-1}^{(i)} \\
+      \mathbf{C}_{t|t-1}^{(j)} &= \sum_i w_{i|j}\!\left[\mathbf{C}_{t-1}^{(i)} + \boldsymbol{\delta}_i\,\boldsymbol{\delta}_i^\prime\right]
+
+   where :math:`\boldsymbol{\delta}_i = \mathbf{m}_{t-1}^{(i)} - \mathbf{m}_{t|t-1}^{(j)}`.
+
+2. **Predict/Update:** Run :math:`K` parallel Kalman predict+update steps
+   (one per regime), each using regime-specific matrices
+   :math:`\{\mathbf{G}_j, \mathbf{F}_j, \mathbf{W}_j, V_j\}`.
+   Implemented via ``jax.vmap``.
+
+3. **Regime probability update:**
+
+   .. math::
+
+      \pi_t^{(j)} = \frac{p(Y_t \mid S_t = j,\, D_{t-1})\,\bar{\pi}_t^{(j)}}{\sum_k p(Y_t \mid S_t = k,\, D_{t-1})\,\bar{\pi}_t^{(k)}}
+
+   where :math:`\bar{\pi}_t^{(j)} = \sum_i P_{ij}\,\pi_{t-1}^{(i)}` are
+   the predicted regime probabilities.
+
+Kim Smoother
+~~~~~~~~~~~~
+
+The Kim smoother is the backward counterpart of the Hamilton filter,
+producing smoothed regime probabilities and state estimates.
+
+For :math:`t = T-1, T-2, \ldots, 1`:
+
+1. **Smoothed regime probabilities:**
+
+   .. math::
+
+      \pi_t^{(i,s)} = \pi_t^{(i)} \sum_j \frac{P_{ij}\,\pi_{t+1}^{(j,s)}}{\bar{\pi}_{t+1}^{(j)}}
+
+2. **Per-regime RTS step:** Apply the RTS smoother backward recursion
+   independently for each regime :math:`j`, using regime-specific
+   :math:`\mathbf{G}_j`.
+
+3. **Collapse** the :math:`K` smoothed states using the smoothed
+   regime probabilities.
+
+Dynamic Factor Models
+---------------------
+
+A DFM with :math:`r` latent factors and :math:`m` observed variables:
+
+.. math::
+
+   \mathbf{f}_t &= \mathbf{G}_f\,\mathbf{f}_{t-1} + \boldsymbol{\omega}_t, \quad \boldsymbol{\omega}_t \sim \mathcal{N}(\mathbf{0}, \mathbf{I}_r) \\
+   \mathbf{y}_t &= \boldsymbol{\Lambda}\,\mathbf{f}_t + \mathbf{e}_t, \quad \mathbf{e}_t \sim \mathcal{N}(\mathbf{0}, \mathbf{R})
+
+where :math:`\boldsymbol{\Lambda} \in \mathbb{R}^{m \times r}` is the
+**loading matrix**, :math:`\mathbf{R}` is diagonal (idiosyncratic noise),
+and :math:`\mathbf{Q} = \mathbf{I}_r` for identification.
+
+**EM estimation** alternates:
+
+- **E-step:** Kalman filter + RTS smoother on the factor state space.
+- **M-step:** Update :math:`\boldsymbol{\Lambda}` and :math:`\mathbf{R}`:
+
+  .. math::
+
+     \hat{\boldsymbol{\Lambda}} &= \left[\sum_t \mathbf{y}_t\,\mathbf{m}_t^{(s)\prime}\right] \left[\sum_t \left(\mathbf{C}_t^{(s)} + \mathbf{m}_t^{(s)}\,\mathbf{m}_t^{(s)\prime}\right)\right]^{-1} \\
+     \hat{R}_{ii} &= \frac{1}{T}\sum_t \left[(y_{t,i} - \hat{\boldsymbol{\Lambda}}_i\,\mathbf{m}_t^{(s)})^2 + \hat{\boldsymbol{\Lambda}}_i\,\mathbf{C}_t^{(s)}\,\hat{\boldsymbol{\Lambda}}_i^\prime\right]
+
+**Varimax rotation** is applied post-estimation for interpretability,
+maximizing the variance of squared loadings across factors.
+
+Bayesian Estimation
+-------------------
+
+The log-posterior for a DLM with hyperparameters :math:`\boldsymbol{\psi}`
+(variance parameters) is:
+
+.. math::
+
+   \log p(\boldsymbol{\psi} \mid Y_{1:T}) \propto \underbrace{\log p(Y_{1:T} \mid \boldsymbol{\psi})}_{\text{Kalman filter log-likelihood}} + \underbrace{\log p(\boldsymbol{\psi})}_{\text{prior}}
+
+Dynaris uses NumPyro's NUTS (No-U-Turn Sampler) to draw posterior samples.
+Since the entire Kalman filter log-likelihood is differentiable via JAX
+autodiff, NUTS can efficiently explore the posterior using Hamiltonian
+dynamics.
+
+**Posterior predictive forecasting:** For each posterior sample
+:math:`\boldsymbol{\psi}^{(s)}`, run the Kalman filter and forecast.
+Aggregate across samples for credible intervals.
+
+**Model comparison** via WAIC and LOO-CV requires **pointwise**
+log-likelihoods :math:`\log p(Y_t \mid Y_{1:t-1}, \boldsymbol{\psi})`,
+which are the individual terms of the prediction error decomposition.
+
 References
 ----------
 
@@ -349,3 +574,13 @@ References
   Kalman Filter*. Cambridge University Press.
 - Petris, G., Petrone, S., and Campagnoli, P. (2009). *Dynamic Linear Models
   with R*. Springer.
+- Julier, S.J. and Uhlmann, J.K. (2004). "Unscented Filtering and Nonlinear
+  Estimation." *Proceedings of the IEEE*, 92(3), 401-422.
+- Doucet, A., de Freitas, N. and Gordon, N. (2001). *Sequential Monte Carlo
+  Methods in Practice*. Springer.
+- Kim, C.-J. (1994). "Dynamic Linear Models with Markov-Switching."
+  *Journal of Econometrics*, 60(1-2), 1-22.
+- Hamilton, J.D. (1989). "A New Approach to the Economic Analysis of
+  Nonstationary Time Series and the Business Cycle." *Econometrica*, 57(2).
+- Stock, J.H. and Watson, M.W. (2002). "Forecasting Using Principal Components
+  from a Large Number of Predictors." *JASA*, 97(460).

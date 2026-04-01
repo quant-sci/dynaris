@@ -22,7 +22,7 @@ from dynaris.filters.kalman import kalman_filter
 ModelFactory = Any
 
 
-def _flat_prior(params: Array) -> Array:
+def _flat_prior(_params: Array) -> Array:
     return jnp.array(0.0)
 
 

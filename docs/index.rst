@@ -87,6 +87,7 @@ through ``jax.vmap``.
    :caption: Theory
 
    math
+   comparison
 
 .. toctree::
    :maxdepth: 1

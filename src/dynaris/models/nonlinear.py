@@ -50,7 +50,7 @@ def StochasticVolatility(  # noqa: N802
 
     Args:
         mu: Long-run mean of log-volatility.
-        phi: Persistence parameter (|phi| < 1 for stationarity).
+        phi: Persistence parameter (abs(phi) < 1 for stationarity).
         sigma: Volatility of log-volatility.
         obs_var: Observation noise variance. Defaults to pi^2 / 2
             (the KSC approximation for log-chi-squared).
