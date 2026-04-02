@@ -193,6 +193,7 @@ class SSM:
         elif self._filter_name == "ekf":
             self._filter_result = ekf_filter(self._model, obs, initial_state=initial_state)
         elif self._filter_name == "ukf":
+            assert isinstance(self._model, NonlinearSSM)
             self._filter_result = ukf_filter(
                 self._model,
                 obs,
@@ -200,6 +201,7 @@ class SSM:
                 **self._filter_kwargs,
             )
         elif self._filter_name == "particle":
+            assert isinstance(self._model, NonlinearSSM)
             key = self._key if self._key is not None else jax.random.PRNGKey(0)
             self._filter_result = particle_filter(
                 self._model,
@@ -209,6 +211,7 @@ class SSM:
                 **self._filter_kwargs,
             )
         elif self._filter_name == "hamilton":
+            assert isinstance(self._model, MarkovSwitchingSSM)
             self._filter_result = hamilton_filter(self._model, obs, initial_state=initial_state)
 
         self._is_fitted = True
@@ -229,9 +232,11 @@ class SSM:
         if isinstance(self._model, StateSpaceModel):
             from dynaris.estimation.diagnostics import standardized_residuals
 
+            assert isinstance(fr, FilterResult)
             return standardized_residuals(fr, self._model)
 
         # Nonlinear: compute y - h(predicted_state)
+        assert isinstance(self._model, NonlinearSSM)
         predicted_obs = jax.vmap(self._model.h)(fr.predicted_states)
         return fr.observations - predicted_obs
 
@@ -289,11 +294,13 @@ class SSM:
         if isinstance(self._model, StateSpaceModel):
             from dynaris.plotting.plots import plot_filtered
 
+            assert isinstance(fr, FilterResult)
             return plot_filtered(fr, self._model, **kwargs)
 
         # Nonlinear: compute observation-space predictions
         import matplotlib.pyplot as plt
 
+        assert isinstance(self._model, NonlinearSSM)
         filtered_obs = jax.vmap(self._model.h)(fr.filtered_states)
         obs = np.asarray(fr.observations)
         filt = np.asarray(filtered_obs)

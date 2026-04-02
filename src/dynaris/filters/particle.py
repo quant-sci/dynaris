@@ -181,7 +181,7 @@ def compute_log_weights(particles: Array, observation: Array, model: NonlinearSS
     log_det = jnp.linalg.slogdet(model.R)[1]
     r_inv_diff = jnp.linalg.solve(model.R, diff.T).T  # (N, m)
     mahal = jnp.sum(diff * r_inv_diff, axis=-1)  # (N,)
-    return -0.5 * (m * jnp.log(2.0 * jnp.pi) + log_det + mahal)
+    return -0.5 * (m * jnp.log(2.0 * jnp.pi) + log_det + mahal)  # type: ignore[no-any-return]
 
 
 def _normalize_log_weights(log_weights: Array) -> tuple[Array, Array]:

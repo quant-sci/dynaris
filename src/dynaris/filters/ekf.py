@@ -131,7 +131,7 @@ class ExtendedKalmanFilter:
         initial_state: GaussianState | None = None,
     ) -> FilterResult:
         """Run full forward EKF via jax.lax.scan."""
-        return ekf_filter(model, observations, initial_state)
+        return ekf_filter(model, observations, initial_state)  # type: ignore[no-any-return]
 
 
 @jax.jit

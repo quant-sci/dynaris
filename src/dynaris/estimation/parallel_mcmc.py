@@ -86,7 +86,7 @@ def fit_bayesian_parallel(
     def _log_density(params: Array) -> Array:
         model = model_fn(params)
         fr = kalman_filter(model, observations)
-        return fr.log_likelihood + log_prior_fn(params)
+        return fr.log_likelihood + log_prior_fn(params)  # type: ignore[no-any-return]
 
     def _numpyro_model() -> None:
         params = numpyro.sample(
@@ -119,7 +119,7 @@ def fit_bayesian_parallel(
     @jax.jit
     def _compute_ll(params: Array) -> Array:
         model = model_fn(params)
-        return kalman_filter(model, observations).log_likelihood
+        return kalman_filter(model, observations).log_likelihood  # type: ignore[no-any-return]
 
     log_lls = jax.vmap(_compute_ll)(all_samples)
 

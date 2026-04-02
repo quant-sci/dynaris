@@ -317,7 +317,7 @@ def _ukf_filter_impl(
         initial_state = model.initial_state()
 
     weights = compute_weights(model.state_dim, alpha, beta, kappa)
-    return _ukf_scan(model, observations, initial_state, weights)
+    return _ukf_scan(model, observations, initial_state, weights)  # type: ignore[no-any-return]
 
 
 @jax.jit

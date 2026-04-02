@@ -71,7 +71,7 @@ def compute_waic(
 
     def _pw_ll(params: Array) -> Array:
         model = model_fn(params)
-        return _pointwise_log_likelihood(model, observations)
+        return _pointwise_log_likelihood(model, observations)  # type: ignore[no-any-return]
 
     pw_lls = jax.vmap(_pw_ll)(result.samples)  # (n_samples, T)
 
@@ -109,7 +109,7 @@ def compute_loo(
 
     def _pw_ll(params: Array) -> Array:
         model = model_fn(params)
-        return _pointwise_log_likelihood(model, observations)
+        return _pointwise_log_likelihood(model, observations)  # type: ignore[no-any-return]
 
     pw_lls = jax.vmap(_pw_ll)(result.samples)  # (n_samples, T)
     pw_lls_np = np.asarray(pw_lls)[np.newaxis, :, :]  # (1, n_samples, T)
@@ -158,7 +158,7 @@ def to_arviz(
 
     def _pw_ll(params: Array) -> Array:
         model = model_fn(params)
-        return _pointwise_log_likelihood(model, observations)
+        return _pointwise_log_likelihood(model, observations)  # type: ignore[no-any-return]
 
     pw_lls = jax.vmap(_pw_ll)(result.samples)
 

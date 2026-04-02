@@ -102,7 +102,7 @@ def posterior_predictive_forecast(
             cov=fr.filtered_covariances[-1],
         )
         fc = forecast(model, last_state, steps)
-        return fc.mean  # (steps, obs_dim)
+        return fc.mean  # type: ignore[no-any-return]  # (steps, obs_dim)
 
     all_forecasts = jax.vmap(_forecast_one)(samples)  # (n, steps, obs_dim)
 

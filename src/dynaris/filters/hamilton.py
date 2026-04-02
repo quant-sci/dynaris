@@ -230,7 +230,7 @@ def hamilton_filter(
     if initial_state is None:
         initial_state = model.initial_state()
 
-    return _hamilton_scan(model, observations, initial_state)
+    return _hamilton_scan(model, observations, initial_state)  # type: ignore[no-any-return]
 
 
 @jax.jit

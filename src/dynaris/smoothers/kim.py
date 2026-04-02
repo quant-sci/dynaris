@@ -121,7 +121,7 @@ def kim_smooth(
         filt = hamilton_filter(model, observations)
         smoothed = kim_smooth(model, filt)
     """
-    return _kim_scan(model, filter_result)
+    return _kim_scan(model, filter_result)  # type: ignore[no-any-return]
 
 
 @jax.jit

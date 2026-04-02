@@ -125,22 +125,22 @@ class MarkovSwitchingSSM:
     @property
     def G_stack(self) -> Array:  # noqa: N802
         """Stacked system matrices, shape (K, n, n)."""
-        return self._G_stack  # type: ignore[attr-defined]
+        return self._G_stack  # type: ignore[attr-defined, no-any-return]
 
     @property
     def F_stack(self) -> Array:  # noqa: N802
         """Stacked observation matrices, shape (K, m, n)."""
-        return self._F_stack  # type: ignore[attr-defined]
+        return self._F_stack  # type: ignore[attr-defined, no-any-return]
 
     @property
     def W_stack(self) -> Array:  # noqa: N802
         """Stacked evolution covariances, shape (K, n, n)."""
-        return self._W_stack  # type: ignore[attr-defined]
+        return self._W_stack  # type: ignore[attr-defined, no-any-return]
 
     @property
     def V_stack(self) -> Array:  # noqa: N802
         """Stacked observation covariances, shape (K, m, m)."""
-        return self._V_stack  # type: ignore[attr-defined]
+        return self._V_stack  # type: ignore[attr-defined, no-any-return]
 
     # --- Factory methods ---
 
@@ -185,7 +185,7 @@ class MarkovSwitchingSSM:
             self.transition_matrix,
             self.initial_probs,
         ]
-        aux = {
+        aux: dict[str, object] = {
             "n_regimes": self.n_regimes,
             "state_dim": self.state_dim,
             "obs_dim": self.obs_dim,
