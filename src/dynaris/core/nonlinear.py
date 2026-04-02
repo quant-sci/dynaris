@@ -106,9 +106,7 @@ class NonlinearSSM:
         return leaves, aux
 
     @classmethod
-    def tree_unflatten(
-        cls, aux_data: dict[str, object], children: list[Array]
-    ) -> NonlinearSSM:
+    def tree_unflatten(cls, aux_data: dict[str, object], children: list[Array]) -> NonlinearSSM:
         """Reconstruct from JAX pytree leaves."""
         return cls(
             transition_fn=aux_data["transition_fn"],  # type: ignore[arg-type]

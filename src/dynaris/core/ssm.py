@@ -209,9 +209,7 @@ class SSM:
                 **self._filter_kwargs,
             )
         elif self._filter_name == "hamilton":
-            self._filter_result = hamilton_filter(
-                self._model, obs, initial_state=initial_state
-            )
+            self._filter_result = hamilton_filter(self._model, obs, initial_state=initial_state)
 
         self._is_fitted = True
         return self
